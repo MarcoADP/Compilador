@@ -4,9 +4,22 @@
 #include <unistd.h>
 
 FILE * arquivo;
+int listaNaoTerminais[50];
+int listaTerminais[50];
+char listaProducoes[10][50];
+int contNaoTerminais = 0;
+int contTerminais = 0;
+int contProducoes = 0;
 
-void leitura(char * nome);
 void ajuda();
+void leitura(char * nome);
+int convertCharToInt(char ch);
+char convertIntToChar(int num);
+int verificaExistencia(int lista[50], int cont, int num);
+void mostraLista(int lista[50], int cont);
+void mostraProducoes();
+void first();
+void follow();
 
 int main(int argc, char *argv[]){
 
@@ -43,9 +56,11 @@ int main(int argc, char *argv[]){
    	} else {
    		leitura(nome_arquivo);	
    	}
-	
-	printf("\n\n");
 
+   	first();
+   	follow();
+
+	printf("\n\n");
 	fclose(arquivo);
 
 	return 0;
@@ -67,9 +82,15 @@ void leitura(char * nome){
 	char ch = fgetc(arquivo);
 	int ascii = ch;
 	printf("\n");
+	int contAtual = 0;
+	char chEsquerda;
+	int flag = 0;
 	while(ch != EOF){
 		if(ch == '\n'){
 			//printf(" ENTER ");
+			contProducoes++;
+			contAtual = 0;
+			flag = 0;
 			printf("\n");
 		}
 		else if(ch == '\t'){
@@ -79,17 +100,110 @@ void leitura(char * nome){
 			//printf(" ESPAÇO ");
 		} else if (ascii > 64 && ascii < 91){
 			printf(" NAO TERMINAL ");
+			if(flag == 0){
+				chEsquerda = ch;
+				//listaProducoes[contProducoes][contAtual] = ch;
+				//contAtual++;
+			}
+			listaProducoes[contProducoes][contAtual] = ch;
+			contAtual++;
+			if(!verificaExistencia(listaNaoTerminais, contNaoTerminais, ch)){
+				listaNaoTerminais[contNaoTerminais] = ch;
+				contNaoTerminais++;
+			}
+			
 			//printf(" %c ", ch);	
 		} else if (ascii > 47 && ascii < 58){
 			printf(" NUMERO ");
 		} else if (ascii > 60 && ascii < 123){
 			printf(" TERMINAL ");
-		} else {
+			flag = 1;
+			if(contAtual == 0){
+				listaProducoes[contProducoes][contAtual] = chEsquerda;
+				contAtual++;
+			}
+			listaProducoes[contProducoes][contAtual] = ch;
+			contAtual++;
+			if(!verificaExistencia(listaTerminais, contTerminais, ch)){
+				listaTerminais[contTerminais] = ch;
+				contTerminais++;
+			}
+		} else if(ascii == 124){
 			printf(" %c ", ch);	
+			contProducoes++;
+			contAtual = 0;
+			flag = 1;
+		} else if(ascii == 45){
+			printf(" %c ", ch);	
+		} else {
+			printf(" TERMINAL ");
+			flag = 1;
+			if(contAtual == 0){
+				listaProducoes[contProducoes][contAtual] = chEsquerda;
+				contAtual++;
+			}
+			listaProducoes[contProducoes][contAtual] = ch;
+			contAtual++;
+			if(!verificaExistencia(listaTerminais, contTerminais, ch)){
+				listaTerminais[contTerminais] = ch;
+				contTerminais++;
+			}
 		}
 		
 		ch = fgetc(arquivo);
 		ascii = ch;
 	}
+	printf("\n");
+	mostraLista(listaNaoTerminais, contNaoTerminais);
+	mostraLista(listaTerminais, contTerminais);
+	mostraProducoes();
+}
 
+int convertCharToInt(char ch){
+	return ch;
+}
+
+char convertIntToChar(int num){
+	return num;
+}
+
+int verificaExistencia(int lista[50], int cont, int num){
+	int i;
+	for(i = 0; i < cont; i++){
+		if(lista[i] == num){
+			return 1;
+		}
+	}
+	return 0;
+}
+
+void mostraLista(int lista[50], int cont){
+	int i;
+	printf("\n");
+	for(i = 0; i < cont; i++){
+		printf("%c - ", lista[i]);
+	}
+	printf("\n");
+}
+
+void mostraProducoes(){
+	int i, j;
+	for(i = 0; i <= contProducoes; i++){
+		printf("\n");
+		for(j = 0; j < 50; j++){
+			printf("%c", listaProducoes[i][j]);
+			if(j == 0){
+				printf(" - ");
+			}
+		}
+	}
+}
+void first(){
+	//int i;
+	//printf("\n");
+	
+}
+
+void follow(){
+	//if()
 }
