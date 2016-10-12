@@ -2,21 +2,27 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <ctype.h>
 
-FILE * arquivo;
-int listaNaoTerminais[50];
-int listaTerminais[50];
+
+char listaNaoTerminais[50];
+char listaTerminais[50];
 char listaProducoes[10][50]; //elemento 0 = elemento à esquerda
 int contNaoTerminais = 0;
 int contTerminais = 0;
 int contProducoes = 0;
 
 void ajuda();
-void leitura(char * nome);
+FILE *abre_arquivo(char * nome);
+void leitura(FILE *arquivo);
+void parse_linha(char *linha);
+void add_terminal(char term);
+void add_nao_terminal(char nterm);
+void add_producao(char *prod, int prod_tam);
 int convertCharToInt(char ch);
 char convertIntToChar(int num);
-int verificaExistencia(int lista[50], int cont, int num);
-void mostraLista(int lista[50], int cont);
+int verificaExistencia(char lista[50], int cont, char num);
+void mostraLista(char lista[50], int cont);
 void mostraProducoes();
 void first();
 void follow();
@@ -49,20 +55,15 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  printf("%s\n", nome_arquivo);
-  if (!strcmp(nome_arquivo, "null")) {
-    printf("erro no nome do arquivo\n");
-    return 0;
-  } else {
-    leitura(nome_arquivo);
-  }
+  FILE * arquivo = abre_arquivo(nome_arquivo);
+
+  leitura(arquivo);
 
   first();
   follow();
 
   printf("\n\n");
   fclose(arquivo);
-
   return 0;
 }
 
@@ -70,91 +71,87 @@ void ajuda() {
   printf("TO DO\n");
 }
 
-void leitura(char * nome) {
-
-  arquivo = fopen(nome, "r");
-
-  if(arquivo == NULL) {
-    printf("Erro ao abrir o arquivo\n");
-    return;
+FILE *abre_arquivo(char * nome) {
+  FILE *arquivo = fopen(nome, "r");
+  if (arquivo == NULL) {
+    printf("Erro ao abrir o arquivo \"%s\"\n", nome);
+    exit(1);
   }
+  return arquivo;
+}
 
-  char ch = fgetc(arquivo);
-  int ascii = ch;
-  printf("\n");
-  int contAtual = 0;
-  char chEsquerda;
-  int flag = 0;
-  while (ch != EOF) {
-    if (ch == '\n') {
-      //printf(" ENTER ");
-      contProducoes++;
-      contAtual = 0;
-      flag = 0;
-      printf("\n");
-    }
-    else if (ch == '\t') {
-      //printf(" TAB ");
-    }
-    else if (ch == ' ') {
-      //printf(" ESPAÇO ");
-    } else if (ascii > 64 && ascii < 91) {
-      printf(" NAO TERMINAL ");
-      if (flag == 0) {
-        chEsquerda = ch;
-        //listaProducoes[contProducoes][contAtual] = ch;
-        //contAtual++;
-      }
-      listaProducoes[contProducoes][contAtual] = ch;
-      contAtual++;
-      if (!verificaExistencia(listaNaoTerminais, contNaoTerminais, ch)) {
-        listaNaoTerminais[contNaoTerminais] = ch;
-        contNaoTerminais++;
-      }
-      //printf(" %c ", ch);
-    } else if (ascii > 47 && ascii < 58) {
-      printf(" NUMERO ");
-    } else if (ascii > 60 && ascii < 123) {
-      printf(" TERMINAL ");
-      flag = 1;
-      if (contAtual == 0) {
-        listaProducoes[contProducoes][contAtual] = chEsquerda;
-        contAtual++;
-      }
-      listaProducoes[contProducoes][contAtual] = ch;
-      contAtual++;
-      if (!verificaExistencia(listaTerminais, contTerminais, ch)) {
-        listaTerminais[contTerminais] = ch;
-        contTerminais++;
-      }
-    } else if(ascii == 124) {
-      printf(" %c ", ch);
-      contProducoes++;
-      contAtual = 0;
-      flag = 1;
-    } else if(ascii == 45) {
-      printf(" %c ", ch);
-    } else {
-      printf(" TERMINAL ");
-      flag = 1;
-      if (contAtual == 0) {
-        listaProducoes[contProducoes][contAtual] = chEsquerda;
-        contAtual++;
-      }
-      listaProducoes[contProducoes][contAtual] = ch;
-      contAtual++;
-      if (!verificaExistencia(listaTerminais, contTerminais, ch)) {
-        listaTerminais[contTerminais] = ch;
-        contTerminais++;
-      }
-    }
-    ch = fgetc(arquivo);
-    ascii = ch;
+
+void leitura(FILE *arquivo) {
+  int linha_tam = 256;
+  char linha[linha_tam];
+  while (fgets(linha, linha_tam, arquivo) != NULL) {
+    parse_linha(linha);
   }
-  printf("\n");
-  mostraLista(listaNaoTerminais, contNaoTerminais);
   mostraLista(listaTerminais, contTerminais);
+  mostraLista(listaNaoTerminais, contNaoTerminais);
   mostraProducoes();
+}
+
+void parse_linha(char *linha) {
+  int producao_tam = 0;
+  char producao[50];
+  char *ch = linha;
+  while (!isalpha(*ch)) {
+    ch++;
+  }
+  printf(" NAO TERMINAL(%c) - ", *ch);
+  producao[producao_tam++] = *ch;
+  add_nao_terminal(*ch);
+  ch++;
+  while (!isalpha(*ch)) {
+    ch++;
+  }
+  do {
+    while (isalpha(*ch) || *ch == '$') {
+      if (islower(*ch)) {
+        if (*ch == 'e') {
+          printf (" TERMINAL(VAZIO) ");
+        } else {
+          printf (" TERMINAL(%c) ", *ch);
+        }
+        add_terminal(*ch);
+      } else if (*ch == '$') {
+        printf(" TERMINAL($) ");
+        add_terminal(*ch);
+      } else {
+        printf (" NÃO TERMINAL(%c) ", *ch);
+        add_nao_terminal(*ch);
+      }
+      producao[producao_tam++] = *ch;
+      ch++;
+    }
+    if (*ch == '|') {
+      add_producao(producao, producao_tam);
+      producao_tam = 1; // reseta o buffer mantendo o nao terminal na primeira posicao
+      printf("|");
+    }
+    ch++;
+  } while (*ch != '\0');
+  add_producao(producao, producao_tam);
+  printf("\n");
+}
+
+void add_nao_terminal(char nterm) {
+  if (!verificaExistencia(listaNaoTerminais, contNaoTerminais, nterm)) {
+    listaNaoTerminais[contNaoTerminais++] = nterm;
+  }
+}
+
+void add_terminal(char term) {
+  if (!verificaExistencia(listaTerminais, contTerminais, term)) {
+    listaTerminais[contTerminais++] = term;
+  }
+}
+
+void add_producao(char *prod, int prod_tam) {
+  prod[prod_tam] = '\0';
+  printf("producao(%s) ", prod);
+  strcpy(listaProducoes[contProducoes++], prod);
 }
 
 int convertCharToInt(char ch) {
@@ -165,7 +162,7 @@ char convertIntToChar(int num) {
   return num;
 }
 
-int verificaExistencia(int lista[50], int cont, int num) {
+int verificaExistencia(char lista[50], int cont, char num) {
   int i;
   for (i = 0; i < cont; i++) {
     if (lista[i] == num) {
@@ -175,7 +172,7 @@ int verificaExistencia(int lista[50], int cont, int num) {
   return 0;
 }
 
-void mostraLista(int lista[50], int cont) {
+void mostraLista(char lista[50], int cont) {
   int i;
   printf("\n");
   for (i = 0; i < cont; i++) {
@@ -186,7 +183,7 @@ void mostraLista(int lista[50], int cont) {
 
 void mostraProducoes() {
   int i, j;
-  for (i = 0; i <= contProducoes; i++) {
+  for (i = 0; i < contProducoes; i++) {
     printf("\n");
     for (j = 0; j < 50; j++) {
       printf("%c", listaProducoes[i][j]);
@@ -201,7 +198,7 @@ void first() {
   int i, j;
   printf("\n\n");
   //VERIFICAR LISTAPRODUCAO[0] e LISTAPRODUCAO[1] pode ser o mesmo
-  for (i = 0; i <= contProducoes; i++) {
+  for (i = 0; i < contProducoes; i++) {
     printf("\n");
     if (verificaExistencia(listaTerminais, contTerminais, listaProducoes[i][j])) {
       //adicionar listaproducao[i][1] em first(listaproducao[i][0])
