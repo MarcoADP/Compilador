@@ -6,7 +6,7 @@
 FILE * arquivo;
 int listaNaoTerminais[50];
 int listaTerminais[50];
-char listaProducoes[10][50];
+char listaProducoes[10][50]; //elemento 0 = elemento à esquerda
 int contNaoTerminais = 0;
 int contTerminais = 0;
 int contProducoes = 0;
@@ -199,9 +199,28 @@ void mostraProducoes(){
 	}
 }
 void first(){
-	//int i;
-	//printf("\n");
-	
+	int i, j;
+	printf("\n\n");
+	//VERIFICAR LISTAPRODUCAO[0] e LISTAPRODUCAO[1] pode ser o mesmo
+	for(i = 0; i <= contProducoes; i++){
+		printf("\n");
+		if(verificaExistencia(listaTerminais, contTerminais, listaProducoes[i][j])){
+			//adicionar listaproducao[i][1] em first(listaproducao[i][0])
+		}
+			else if(verificaExistencia(listaNaoTerminais, contNaoTerminais, listaProducoes[i][j])){
+			//adicionar o first(listaproducao[i][1]) em first(listaproducao[i][0]) EXCETO e
+		}	
+
+
+		for(j = 2; j < 50; j++){
+			//if(algo que nao entendi){
+			//first(listaproducao[i][0]) += first(Xi) EXCETO e
+			//}
+		}
+		//if(listaproducao[i][0]) deriva e{
+		//	first(listaproducao[i][0]) += e
+		//}
+	}
 }
 
 void follow(){
