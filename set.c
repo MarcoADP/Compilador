@@ -12,7 +12,6 @@ bool set_add(struct set *s, char elem) {
   if (!set_contains(s, elem)) {
     s->elementos[s->tamanho++] = elem;
   }
-  set_print(s);
   return true;
 }
 
@@ -30,7 +29,6 @@ bool set_contains(struct set *s, char elem) {
 }
 
 void set_print(struct set *s) {
-  printf("\n\nSET: \nSize: %d\n", s->tamanho);
-  write(1, s->elementos, s->tamanho);
-  printf("\n\n");
+  s->elementos[s->tamanho] = '\0';
+  printf("SET: {tamanho: %d, \"%s\"}\n", s->tamanho, s->elementos);
 }

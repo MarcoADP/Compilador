@@ -14,7 +14,8 @@ bool producoes_add(struct producao *producoes, struct set *producao) {
   }
   producao->elementos[producao->tamanho] = '\0';
   printf("producao(%s) ", producao->elementos);
-  strcpy(producoes->regras[producoes->tamanho++].elementos, producao->elementos);
+  strcpy(producoes->regras[producoes->tamanho].elementos, producao->elementos);
+  producoes->regras[producoes->tamanho++].tamanho = producao->tamanho;
   return true;
 }
 

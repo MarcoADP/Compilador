@@ -98,9 +98,15 @@ void leitura(FILE *arquivo) {
   while (fgets(linha, linha_tam, arquivo) != NULL) {
     parse_linha(linha);
   }
+  printf("Terminais:\n");
   set_print(&terminais);
+  printf("\n");
+  printf("Não terminais:\n");
   set_print(&nao_terminais);
+  printf("\n");
+  printf("Regras de Produção:\n");
   producoes_print(&producoes);
+  printf("\n");
   // mostraLista(listaTerminais, contTerminais);
   // mostraLista(listaNaoTerminais, contNaoTerminais);
   // mostraProducoes();
@@ -109,6 +115,7 @@ void leitura(FILE *arquivo) {
 void parse_linha(char *linha) {
 
   struct set producao;
+  set_init(&producao);
   // int producao_tam = 0;
   // char producao[REGRA_TAMANHO_MAX];
   char *ch = linha;
