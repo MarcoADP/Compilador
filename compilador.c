@@ -3,7 +3,16 @@
 #include <string.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <stdbool.h>
+#include "set.h"
+#include "producao.h"
+#include "err.h"
 
+
+struct set terminais;
+struct set nao_terminais;
+struct producao producoes;
+extern char *buffer_err;
 
 char listaNaoTerminais[50];
 char listaTerminais[50];
@@ -24,6 +33,7 @@ char convertIntToChar(int num);
 int verificaExistencia(char lista[50], int cont, char num);
 void mostraLista(char lista[50], int cont);
 void mostraProducoes();
+void new_first();
 void first();
 void follow();
 
@@ -33,11 +43,10 @@ int main(int argc, char *argv[]) {
   int opcao;
   char nome_arquivo[60] = "null";
 
-  if (argc == 1) {
-    printf("É necessário indicar ao menos o nome do arquivo de entrada!\n\n");
-    printf("Para mais detalhe, indique a diretiva -h para acessar a Seção Ajuda\n\n");
-    return 0;
-  }
+  // if (argc == 1) {
+  //   errexit("É necessário indicar ao menos o nome do arquivo de entrada!\n\n"
+  //           "Para mais detalhe, indique a diretiva -h para acessar a Seção Ajuda\n\n");
+  // }
   //printf("a\n");
   while ((opcao = getopt(argc,argv,"hi:")) != -1) {
     switch (opcao) {
@@ -56,10 +65,12 @@ int main(int argc, char *argv[]) {
   }
 
   FILE * arquivo = abre_arquivo(nome_arquivo);
-
+  producoes_init(&producoes);
+  set_init(&nao_terminais);
+  set_init(&terminais);
   leitura(arquivo);
 
-  first();
+  new_first();
   follow();
 
   printf("\n\n");
@@ -68,14 +79,14 @@ int main(int argc, char *argv[]) {
 }
 
 void ajuda() {
-  printf("TO DO\n");
+  errexit("TO DO\n");
 }
 
 FILE *abre_arquivo(char * nome) {
   FILE *arquivo = fopen(nome, "r");
   if (arquivo == NULL) {
-    printf("Erro ao abrir o arquivo \"%s\"\n", nome);
-    exit(1);
+    sprintf(buffer_err, "Erro ao abrir o arquivo \"%s\"\n", nome);
+    errexit(buffer_err);
   }
   return arquivo;
 }
@@ -87,21 +98,27 @@ void leitura(FILE *arquivo) {
   while (fgets(linha, linha_tam, arquivo) != NULL) {
     parse_linha(linha);
   }
-  mostraLista(listaTerminais, contTerminais);
-  mostraLista(listaNaoTerminais, contNaoTerminais);
-  mostraProducoes();
+  set_print(&terminais);
+  set_print(&nao_terminais);
+  producoes_print(&producoes);
+  // mostraLista(listaTerminais, contTerminais);
+  // mostraLista(listaNaoTerminais, contNaoTerminais);
+  // mostraProducoes();
 }
 
 void parse_linha(char *linha) {
-  int producao_tam = 0;
-  char producao[50];
+
+  struct set producao;
+  // int producao_tam = 0;
+  // char producao[REGRA_TAMANHO_MAX];
   char *ch = linha;
   while (!isalpha(*ch)) {
     ch++;
   }
   printf(" NAO TERMINAL(%c) - ", *ch);
-  producao[producao_tam++] = *ch;
-  add_nao_terminal(*ch);
+  set_add(&producao, *ch);
+  // producao[producao_tam++] = *ch;
+  set_add(&nao_terminais, *ch);
   ch++;
   while (!isalpha(*ch)) {
     ch++;
@@ -110,29 +127,41 @@ void parse_linha(char *linha) {
     while (isalpha(*ch) || *ch == '$') {
       if (islower(*ch)) {
         if (*ch == 'e') {
-          printf (" TERMINAL(VAZIO) ");
+          printf(" TERMINAL(VAZIO) ");
         } else {
-          printf (" TERMINAL(%c) ", *ch);
+          printf(" TERMINAL(%c) ", *ch);
         }
-        add_terminal(*ch);
+        if (!set_add(&terminais, *ch)) {
+          sprintf(buffer_err, "Erro ao adicionar %c no conjunto de terminais.\n", *ch);
+          errexit(buffer_err);
+        }
       } else if (*ch == '$') {
         printf(" TERMINAL($) ");
-        add_terminal(*ch);
+        if (!set_add(&terminais, *ch)) {
+          sprintf(buffer_err, "Erro ao adicionar %c no conjunto de terminais.\n", *ch);
+          errexit(buffer_err);
+        }
       } else {
         printf (" NÃO TERMINAL(%c) ", *ch);
-        add_nao_terminal(*ch);
+        if (!set_add(&nao_terminais, *ch)) {
+          sprintf(buffer_err, "Erro ao adicionar %c no conjunto de nao terminais.\n", *ch);
+          errexit(buffer_err);
+        }
       }
-      producao[producao_tam++] = *ch;
+      set_add(&producao, *ch);
+      // producao[producao_tam++] = *ch;
       ch++;
     }
     if (*ch == '|') {
-      add_producao(producao, producao_tam);
-      producao_tam = 1; // reseta o buffer mantendo o nao terminal na primeira posicao
+      producoes_add(&producoes, &producao);
+      // add_producao(producao, producao_tam);
+      producao.tamanho = 1; // reseta o buffer mantendo o nao terminal na primeira posicao
       printf("|");
     }
     ch++;
   } while (*ch != '\0');
-  add_producao(producao, producao_tam);
+  producoes_add(&producoes, &producao);
+  // add_producao(producao, producao_tam);
   printf("\n");
 }
 
@@ -192,6 +221,22 @@ void mostraProducoes() {
       }
     }
   }
+}
+void new_first() {
+  //FIRST(A) = { t | A =>* tw for some w }
+  bool mudou;
+  struct set *producao;
+  char *elemento;
+  do {
+    mudou = false;
+    for (int i = 0; i < producoes.tamanho; i++) {
+      producao = &producoes.regras[i];
+      elemento = &producao->elementos[1];
+      if (set_contains(&terminais, *elemento)) {
+        printf("first(%c) = %c\n", producao->elementos[0], *elemento);
+      }
+    }
+  } while (mudou);
 }
 
 void first() {
