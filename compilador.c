@@ -13,6 +13,11 @@ struct first {
   struct set elementos;
 };
 
+struct follow {
+  char chave;
+  struct set elementos;  
+};
+
 struct first *first_set;
 struct set terminais;
 struct set nao_terminais;
