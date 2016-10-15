@@ -196,63 +196,29 @@ void first() {
       producao = &producoes.regras[i];
       chave = producao->elementos[0];
       elemento = &producao->elementos[1];
-      for (; elemento != '\0'; elemento++) {
-        if (!set_contains(&nao_terminais, *elemento)) {
-          break;
-        } else {
-          struct first *f = get_first(*elemento);
-          if (!set_contains(&f->elementos, 'e')) {
-            //nao terminal, porem nao deriva VAZIO
-            break;
-          }
-        }
-      }
-      // todos os elementos da producao sao nao terminais e derivam vazio
-      if (elemento == '\0') {
-        mudou |= first_add(chave, 'e');
-      }
-    }
-    for (int i = 0; i < producoes.tamanho; i++) {
-      producao = &producoes.regras[i];
-      chave = producao->elementos[0];
-      elemento = &producao->elementos[1];
       // comeca com nao terminal
-      if (!set_contains(&nao_terminais, *elemento)) {
+      if (set_contains(&terminais, *elemento)) {
         continue;
       }
-      struct first *f = get_first(*elemento);
-      if (!set_contains(&f->elementos, 'e')) {
-        // nao terminal e nao deriva VAZIO
-        for (size_t i = 0; i < f->elementos.tamanho; i++) {
-          mudou |= first_add(chave, f->elementos.elementos[i]);
-        }
-        continue;
-      }
-      // como comeca com nao terminal que deriva vazio,
-      // procura um terminal que possa ser derivado
-      elemento = &producao->elementos[2];
-      for (; elemento != '\0'; elemento++) {
-        if (set_contains(&terminais, *elemento)) {
-          mudou |= first_add(chave, *elemento);
-          break;
-        } else {
-          struct first *f = get_first(*elemento);
-          if (!set_contains(&f->elementos, 'e')) {
-            //nao terminal, porem nao deriva VAZIO
-            break;
-          }
-        }
-      }
-      // se o elemento corrente e nao terminal
-      // e nao percorreu toda a producao
-      // condicao do 3o for satisfeita
-      if (elemento != '\0' && set_contains(&nao_terminais, *elemento)) {
+      do {
+        // comeca com nao terminal
+        // adiciona todos os first deste nao terminal exceto vazio
         struct first *f = get_first(*elemento);
         for (size_t i = 0; i < f->elementos.tamanho; i++) {
           if (f->elementos.elementos[i] != 'e') {
             mudou |= first_add(chave, f->elementos.elementos[i]);
           }
         }
+        // se nao terminal nao deriva vazio, passa a proxima producao
+        if (!set_contains(&f->elementos, 'e')) {
+          // nao terminal e nao deriva VAZIO
+          break;
+        }
+        elemento++;
+      } while (*elemento != '\0');
+      // todos os elementos da producao sao nao terminais e derivam vazio
+      if (elemento == '\0') {
+        mudou |= first_add(chave, 'e');
       }
     }
   } while (mudou);
