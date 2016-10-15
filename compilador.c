@@ -168,10 +168,10 @@ char convertIntToChar(int num) {
   return num;
 }
 
+//FIRST(A) = { t | A =>* tw for some w }
 void first() {
-  //FIRST(A) = { t | A =>* tw for some w }
   for (size_t i = 0; i < nao_terminais.tamanho; i++) {
-    first_set[i].chave = nao_terminais.elementos[0];
+    first_set[i].chave = nao_terminais.elementos[i];
     set_init(&first_set[i].elementos);
   }
   bool mudou;
