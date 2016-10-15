@@ -1,0 +1,4 @@
+S - XYZ
+X - aXb | e
+Y - cYZcX | d
+Z - gZYg | f
