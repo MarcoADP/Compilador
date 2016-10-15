@@ -29,7 +29,7 @@ void parse_terminais();
 int convertCharToInt(char ch);
 char convertIntToChar(int num);
 void first();
-void first_add(char nao_terminal, char terminal);
+bool first_add(char nao_terminal, char terminal);
 struct first *get_first(char nao_terminal);
 void print_first();
 void follow();
@@ -176,7 +176,6 @@ void first() {
     first_set[i].chave = nao_terminais.elementos[i];
     set_init(&first_set[i].elementos);
   }
-  bool mudou;
   struct regra *producao;
   char *elemento;
   char chave;
@@ -190,26 +189,14 @@ void first() {
     }
   }
 
+  bool mudou;
   do {
     mudou = false;
     for (int i = 0; i < producoes.tamanho; i++) {
       producao = &producoes.regras[i];
       chave = producao->elementos[0];
       elemento = &producao->elementos[1];
-      if (set_contains(&nao_terminais, *elemento)) {
-        struct first *f = get_first(*elemento);
-        if (set_contains(&f->elementos, 'e')) {
-          first_add(chave, 'e');
-          mudou = true;
-        }
-      }
-    }
-    for (int i = 0; i < producoes.tamanho; i++) {
-      producao = &producoes.regras[i];
-      chave = producao->elementos[0];
-      int j;
-      for (j = 1; j < producao->tamanho; j++) {
-        elemento = &producao->elementos[j];
+      for (; elemento != '\0'; elemento++) {
         if (!set_contains(&nao_terminais, *elemento)) {
           break;
         } else {
@@ -221,21 +208,64 @@ void first() {
         }
       }
       // todos os elementos da producao sao nao terminais e derivam vazio
-      if (j == producao->tamanho) {
-        first_add(chave, 'e');
-        mudou = true;
+      if (elemento == '\0') {
+        mudou |= first_add(chave, 'e');
+      }
+    }
+    for (int i = 0; i < producoes.tamanho; i++) {
+      producao = &producoes.regras[i];
+      chave = producao->elementos[0];
+      elemento = &producao->elementos[1];
+      // comeca com nao terminal
+      if (!set_contains(&nao_terminais, *elemento)) {
+        continue;
+      }
+      struct first *f = get_first(*elemento);
+      if (!set_contains(&f->elementos, 'e')) {
+        // nao terminal, porem nao deriva VAZIO
+        break;
+      }
+      // como comeca com nao terminal que deriva vazio,
+      // procura um terminal que possa ser derivado
+      elemento = &producao->elementos[2];
+      for (; elemento != '\0'; elemento++) {
+        if (set_contains(&terminais, *elemento)) {
+          mudou |= first_add(chave, *elemento);
+          break;
+        } else {
+          struct first *f = get_first(*elemento);
+          if (!set_contains(&f->elementos, 'e')) {
+            //nao terminal, porem nao deriva VAZIO
+            break;
+          }
+        }
+      }
+      // se o elemento corrente e nao terminal
+      // e nao percorreu toda a producao
+      // condicao do 3o for satisfeita
+      if (elemento != '\0' && set_contains(&nao_terminais, *elemento)) {
+        struct first *f = get_first(*elemento);
+        for (size_t i = 0; i < f->elementos.tamanho; i++) {
+          if (f->elementos.elementos[i] != 'e') {
+            mudou |= first_add(chave, f->elementos.elementos[i]);
+          }
+        }
       }
     }
   } while (mudou);
 }
 
-void first_add(char nao_terminal, char terminal) {
-  for (size_t i = 0; i < nao_terminais.tamanho; i++) {
+bool first_add(char nao_terminal, char terminal) {
+  int tamanho_old;
+  int i;
+  for (i = 0; i < nao_terminais.tamanho; i++) {
     if (nao_terminal == first_set[i].chave) {
+      tamanho_old = first_set[i].elementos.tamanho;
       set_add(&first_set[i].elementos, terminal);
       break;
     }
   }
+  return tamanho_old != first_set[i].elementos.tamanho;
 }
 
 struct first *get_first(char nao_terminal) {
