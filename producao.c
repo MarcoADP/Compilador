@@ -13,7 +13,6 @@ bool producoes_add(struct producoes *producoes, struct regra *producao) {
     return false;
   }
   producao->elementos[producao->tamanho] = '\0';
-  printf("producao(%s) ", producao->elementos);
   strcpy(producoes->regras[producoes->tamanho].elementos, producao->elementos);
   producoes->regras[producoes->tamanho++].tamanho = producao->tamanho;
   return true;
@@ -28,7 +27,7 @@ void producoes_print(struct producoes *producoes) {
   for (int i = 0; i < producoes->tamanho; i++) {
     regra_print(&producoes->regras[i]);
   }
-  printf("}\n");  
+  printf("}\n");
 }
 
 void regra_init(struct regra *r) {

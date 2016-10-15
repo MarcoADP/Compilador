@@ -26,6 +26,7 @@ char convertIntToChar(int num);
 void new_first();
 void first();
 void follow();
+void constroiTabela();
 
 int main(int argc, char *argv[]) {
 
@@ -59,6 +60,7 @@ int main(int argc, char *argv[]) {
 
   first();
   follow();
+  constroiTabela();
 
   printf("\n\n");
   fclose(arquivo);
@@ -87,7 +89,7 @@ void leitura(FILE *arquivo) {
     parse_linha(linha);
   }
   parse_terminais();
-  printf("Terminais:\n");
+  printf("\nTerminais:\n");
   set_print(&terminais);
   printf("\n");
   printf("Não terminais:\n");
@@ -117,7 +119,6 @@ void parse_left(char *left, char *middle, struct regra *producao) {
   }
   set_add(&nao_terminais, *left);
   regra_add(producao, *left);
-  printf(" NAO TERMINAL(%c) - ", *left);
 }
 
 void parse_right(char *right, struct regra *producao) {
@@ -179,4 +180,36 @@ void first() {
 
 void follow() {
   //if()
+}
+
+void constroiTabela(){
+    // int tabela[contNaoTerminais+1][contTerminais+1];
+    // int i, j;
+    // for(i = 0; i <= contNaoTerminais; i++){
+    //     for(j = 0; j <= contTerminais; j++){
+    //         tabela[i][j] = 35;
+    //     }
+    // }
+    //
+    // for(i = 1; i <= contNaoTerminais; i++){
+    //     //printf("\n%c", listaNaoTerminais[i-1]);
+    //     tabela[i][0] = convertCharToInt(listaNaoTerminais[i-1]);
+    // }
+    //
+    // for(i = 1; i <= contTerminais; i++){
+    //     //printf("\n%c", listaNaoTerminais[i-1]);
+    //     tabela[0][i] = convertCharToInt(listaTerminais[i-1]);
+    // }
+    //
+    // //PREENCHER A TABELA!!!
+    //
+    // printf("\n");
+    // for(i = 0; i <= contNaoTerminais; i++){
+    //     printf("\n");
+    //     for(j = 0; j <= contTerminais; j++){
+    //         printf("%c  ", convertIntToChar(tabela[i][j]));
+    //     }
+    // }
+    //
+    // //retornar a tabela
 }
