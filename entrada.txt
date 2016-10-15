@@ -2,3 +2,4 @@ S - abX$
 X    - cd | bX
 X -    H
 H 	-	w | k 
+o - a | b

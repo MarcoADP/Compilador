@@ -1,10 +1,12 @@
 #ifndef PRODUCAO_H
 #define PRODUCAO_H
-#define PRODUCOES_TAMANHO_MAX 10
-#define REGRA_TAMANHO_MAX 50
+
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+
+#define PRODUCOES_TAMANHO_MAX 10
+#define REGRA_TAMANHO_MAX 50
 
 struct regra {
   int tamanho;

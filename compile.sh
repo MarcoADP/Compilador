@@ -6,4 +6,4 @@ if [ ! -d "$BINARY_PATH" ]; then
   mkdir "$BINARY_PATH"
 fi
 
-gcc -std=gnu99 -g -o "$BINARY_PATH"/compilador compilador.c producao.c set.c err.c
+gcc -std=gnu99 -Wall -Wno-unused-result -g -o "$BINARY_PATH"/compilador compilador.c producao.c set.c err.c
