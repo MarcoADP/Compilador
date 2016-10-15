@@ -28,8 +28,9 @@ void parse_right(char *right, struct regra *producao);
 void parse_terminais();
 int convertCharToInt(char ch);
 char convertIntToChar(int num);
-void new_first();
 void first();
+void first_add(char nao_terminal, char terminal);
+struct first *get_first(char nao_terminal);
 void follow();
 void constroiTabela();
 
@@ -170,16 +171,16 @@ char convertIntToChar(int num) {
 void first() {
   //FIRST(A) = { t | A =>* tw for some w }
   for (size_t i = 0; i < nao_terminais.tamanho; i++) {
-    first_set[i].chave = nao_terminais[i];
+    first_set[i].chave = nao_terminais.elementos[0];
     set_init(&first_set[i].elementos);
   }
   bool mudou;
   struct regra *producao;
   char *elemento;
-  char *chave;
+  char chave;
   for (int i = 0; i < producoes.tamanho; i++) {
     producao = &producoes.regras[i];
-    chave = &producao->elementos[0];
+    chave = producao->elementos[0];
     elemento = &producao->elementos[1];
     if (set_contains(&terminais, *elemento)) {
       printf("first(%c) = %c\n", chave, *elemento);
@@ -191,11 +192,11 @@ void first() {
     mudou = false;
     for (int i = 0; i < producoes.tamanho; i++) {
       producao = &producoes.regras[i];
-      chave = &producao->elementos[0];
+      chave = producao->elementos[0];
       elemento = &producao->elementos[1];
-      if (set_contains(nao_terminais, *elemento)) {
+      if (set_contains(&nao_terminais, *elemento)) {
         struct first *f = get_first(*elemento);
-        if (set_contains(*f.elementos, 'e')) {
+        if (set_contains(&f->elementos, 'e')) {
           first_add(chave, 'e');
           mudou = true;
         }
@@ -203,15 +204,15 @@ void first() {
     }
     for (int i = 0; i < producoes.tamanho; i++) {
       producao = &producoes.regras[i];
-      chave = &producao->elementos[0];
+      chave = producao->elementos[0];
       int j;
       for (j = 1; j < producao->tamanho; j++) {
         elemento = &producao->elementos[j];
-        if (!set_contains(nao_terminais, *elemento)) {
+        if (!set_contains(&nao_terminais, *elemento)) {
           break;
         } else {
           struct first *f = get_first(*elemento);
-          if (!set_contains(*f.elementos, 'e')) {
+          if (!set_contains(&f->elementos, 'e')) {
             //nao terminal, porem nao deriva VAZIO
             break;
           }
@@ -219,9 +220,8 @@ void first() {
       }
       // todos os elementos da producao sao nao terminais e derivam vazio
       if (j == producao->tamanho) {
-          first_add(chave, 'e');
-          mudou = true;
-        }
+        first_add(chave, 'e');
+        mudou = true;
       }
     }
   } while (mudou);
@@ -230,14 +230,13 @@ void first() {
 void first_add(char nao_terminal, char terminal) {
   for (size_t i = 0; i < nao_terminais.tamanho; i++) {
     if (nao_terminal == first_set[i].chave) {
-      struct first *f = get_fist
       set_add(&first_set[i].elementos, terminal);
       break;
     }
   }
 }
 
-struct first *get_first(char *nao_terminal) {
+struct first *get_first(char nao_terminal) {
   for (size_t i = 0; i < nao_terminais.tamanho; i++) {
     if (nao_terminal == first_set[i].chave) {
       return &first_set[i];
