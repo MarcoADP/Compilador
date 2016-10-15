@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
   producoes_init(&producoes);
   set_init(&nao_terminais);
   set_init(&terminais);
-  leitura(arquivo);
+  parse_arquivo(arquivo);
   fclose(arquivo);
   printf("\nTerminais:\n");
   set_print(&terminais);
@@ -165,7 +165,7 @@ void parse_right(char *right, struct regra *producao) {
       producoes_add(&producoes, producao);
       producao->tamanho = 1;
     }
-    
+
     if (*right != '\0') {
       right++;
     }
