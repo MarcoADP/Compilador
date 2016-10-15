@@ -1,13 +1,13 @@
 #ifndef SET_H
 #define SET_H
-#define SET_TAM_MAX 50
+#define SET_TAMANHO_MAX 50
 #include <stdio.h>
 #include <unistd.h>
 #include <stdbool.h>
 
 struct set {
   int tamanho;
-  char elementos[SET_TAM_MAX];
+  char elementos[SET_TAMANHO_MAX];
 };
 
 void set_init(struct set *s);

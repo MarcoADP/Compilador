@@ -1,18 +1,28 @@
 #ifndef PRODUCAO_H
 #define PRODUCAO_H
 #define PRODUCOES_TAMANHO_MAX 10
+#define REGRA_TAMANHO_MAX 50
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
-#include "set.h"
 
-struct producao {
+struct regra {
   int tamanho;
-  struct set regras[PRODUCOES_TAMANHO_MAX];
+  char elementos[REGRA_TAMANHO_MAX];
 };
 
-void producoes_init(struct producao *producoes);
-bool producoes_add(struct producao *producoes, struct set *producao);
-bool producoes_full(struct producao *producoes);
-void producoes_print(struct producao *producoes);
+struct producoes {
+  int tamanho;
+  struct regra regras[PRODUCOES_TAMANHO_MAX];
+};
+
+void producoes_init(struct producoes *producoes);
+bool producoes_add(struct producoes *producoes, struct regra *producao);
+bool producoes_full(struct producoes *producoes);
+void producoes_print(struct producoes *producoes);
+void regra_init(struct regra *regra);
+bool regra_add(struct regra *regra, char elem);
+bool regra_full(struct regra *regra);
+void regra_print(struct regra *regra);
+
 #endif
