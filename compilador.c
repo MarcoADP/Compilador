@@ -26,6 +26,7 @@ void mostraLista(char lista[50], int cont);
 void mostraProducoes();
 void first();
 void follow();
+void constroiTabela();
 
 int main(int argc, char *argv[]) {
 
@@ -61,6 +62,7 @@ int main(int argc, char *argv[]) {
 
   first();
   follow();
+  constroiTabela();
 
   printf("\n\n");
   fclose(arquivo);
@@ -198,12 +200,14 @@ void first() {
   int i, j;
   printf("\n\n");
   //VERIFICAR LISTAPRODUCAO[0] e LISTAPRODUCAO[1] pode ser o mesmo
-  for (i = 0; i < contProducoes; i++) {
-    printf("\n");
-    if (verificaExistencia(listaTerminais, contTerminais, listaProducoes[i][j])) {
-      //adicionar listaproducao[i][1] em first(listaproducao[i][0])
-    } else if (verificaExistencia(listaNaoTerminais, contNaoTerminais, listaProducoes[i][j])) {
-      //adicionar o first(listaproducao[i][1]) em first(listaproducao[i][0]) EXCETO e
+  for (i = (contProducoes - 1); i >= 0; i--) {
+    //printf("\n");
+    if (verificaExistencia(listaTerminais, contTerminais, listaProducoes[i][1])) {
+        printf("\n%c -- TERMINAL", listaProducoes[i][1]);
+        //adicionar listaproducao[i][1] em first(listaproducao[i][1])
+    } else if (verificaExistencia(listaNaoTerminais, contNaoTerminais, listaProducoes[i][1])) {
+        printf("\n%c -- NAO TERMINAL", listaProducoes[i][1]);
+      //adicionar o first(listaproducao[i][1]) em first(listaproducao[i][1]) EXCETO e
     }
 
     for (j = 2; j < 50; j++) {
@@ -219,4 +223,36 @@ void first() {
 
 void follow() {
   //if()
+}
+
+void constroiTabela(){
+    int tabela[contNaoTerminais+1][contTerminais+1];
+    int i, j;
+    for(i = 0; i <= contNaoTerminais; i++){
+        for(j = 0; j <= contTerminais; j++){
+            tabela[i][j] = 35;
+        }
+    }
+
+    for(i = 1; i <= contNaoTerminais; i++){
+        //printf("\n%c", listaNaoTerminais[i-1]);
+        tabela[i][0] = convertCharToInt(listaNaoTerminais[i-1]);
+    }
+
+    for(i = 1; i <= contTerminais; i++){
+        //printf("\n%c", listaNaoTerminais[i-1]);
+        tabela[0][i] = convertCharToInt(listaTerminais[i-1]);
+    }
+
+    //PREENCHER A TABELA!!!
+
+    printf("\n");
+    for(i = 0; i <= contNaoTerminais; i++){
+        printf("\n");
+        for(j = 0; j <= contTerminais; j++){
+            printf("%c  ", convertIntToChar(tabela[i][j]));
+        }
+    }
+
+    //retornar a tabela
 }
