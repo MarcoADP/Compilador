@@ -344,7 +344,7 @@ void follow() {
 
 
   bool mudou;
-  do{
+  //do{
 
     mudou = false;
     printf("MUDOU => %d\n", mudou);
@@ -378,26 +378,26 @@ void follow() {
         anterior = &producao->elementos[j-1];
         if(set_contains(&nao_terminais, *elemento)){
           for(int k = 0; k < nao_terminais.tamanho; k++){
-          if(*elemento == first_set[k].chave){
-            if(set_contains(&first_set[k].elementos, 'e')){
-              for(int kk = 0; kk < nao_terminais.tamanho; kk++){
-                if(chave == follow_set[kk].chave){
-                  for(int l = 0; l < follow_set[kk].elementos.tamanho; l++){
-                    mudou |= follow_add(*anterior, follow_set[kk].elementos.elementos[l]);
+            if(*elemento == first_set[k].chave){
+              if(set_contains(&first_set[k].elementos, 'e')){
+                for(int kk = 0; kk < nao_terminais.tamanho; kk++){
+                  if(chave == follow_set[kk].chave){
+                    for(int l = 0; l < follow_set[kk].elementos.tamanho; l++){
+                      mudou |= follow_add(*anterior, follow_set[kk].elementos.elementos[l]);
+                    }
+                    break;
                   }
-                  break;
                 }
               }
+              break;
             }
-            break;
           }
-        }
         }
       }
 
     } 
 
-  } while(mudou);
+  //} while(mudou);
 
 
 
