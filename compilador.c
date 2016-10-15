@@ -31,6 +31,7 @@ char convertIntToChar(int num);
 void first();
 void first_add(char nao_terminal, char terminal);
 struct first *get_first(char nao_terminal);
+void print_first();
 void follow();
 void constroiTabela();
 
@@ -76,6 +77,7 @@ int main(int argc, char *argv[]) {
 
   first_set = malloc(nao_terminais.tamanho * sizeof(struct first));
   first();
+  print_first();
   follow();
   constroiTabela();
   free(first_set);
@@ -183,7 +185,7 @@ void first() {
     chave = producao->elementos[0];
     elemento = &producao->elementos[1];
     if (set_contains(&terminais, *elemento)) {
-      printf("first(%c) = %c\n", chave, *elemento);
+      // printf("first(%c) = %c\n", chave, *elemento);
       first_add(chave, *elemento);
     }
   }
@@ -244,6 +246,17 @@ struct first *get_first(char nao_terminal) {
   }
   return NULL;
 }
+
+void print_first() {
+  printf("FIRST SET: \n{");
+  for (size_t i = 0; i < nao_terminais.tamanho; i++) {
+    printf("{Chave: %c,\n", first_set[i].chave);
+    set_print(&first_set[i].elementos);
+    printf("},\n");
+  }
+  printf("}\n");
+}
+
 void follow() {
   //if()
 }
