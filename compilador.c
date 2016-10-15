@@ -170,7 +170,6 @@ char convertIntToChar(int num) {
   return num;
 }
 
-//FIRST(A) = { t | A =>* tw for some w }
 void first() {
   for (size_t i = 0; i < nao_terminais.tamanho; i++) {
     first_set[i].chave = nao_terminais.elementos[i];
@@ -179,6 +178,7 @@ void first() {
   struct regra *producao;
   char *elemento;
   char chave;
+  //FIRST(A) = { t | A =>* tw for some w }
   for (int i = 0; i < producoes.tamanho; i++) {
     producao = &producoes.regras[i];
     chave = producao->elementos[0];
@@ -222,8 +222,11 @@ void first() {
       }
       struct first *f = get_first(*elemento);
       if (!set_contains(&f->elementos, 'e')) {
-        // nao terminal, porem nao deriva VAZIO
-        break;
+        // nao terminal e nao deriva VAZIO
+        for (size_t i = 0; i < f->elementos.tamanho; i++) {
+          mudou |= first_add(chave, f->elementos.elementos[i]);
+        }
+        continue;
       }
       // como comeca com nao terminal que deriva vazio,
       // procura um terminal que possa ser derivado
