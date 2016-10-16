@@ -8,18 +8,13 @@
 #include "producao.h"
 #include "err.h"
 
-struct first {
+struct grammar_set {
   char chave;
   struct set elementos;
 };
 
-struct follow {
-  char chave;
-  struct set elementos;  
-};
-
-struct first *first_set;
-struct follow *follow_set;
+struct grammar_set *first_set;
+struct grammar_set *follow_set;
 struct set terminais;
 struct set nao_terminais;
 struct producoes producoes;
@@ -39,12 +34,10 @@ void parse_terminais();
 int convertCharToInt(char ch);
 char convertIntToChar(int num);
 void first();
-bool first_add(char nao_terminal, char terminal);
-struct first *get_first(char nao_terminal);
-void print_first();
 void follow();
-bool follow_add(char nao_terminal, char terminal);
-struct follow *get_follow(char nao_terminal);
+bool grammar_set_add(char nao_terminal, char terminal);
+struct grammar_set *get_grammar_set(char nao_terminal);
+void print_first();
 void print_follow();
 void constroiTabela();
 
@@ -59,8 +52,8 @@ int main(int argc, char *argv[]) {
   parse_arquivo(arquivo);
   fclose(arquivo);
   
-  first_set = malloc(nao_terminais.tamanho * sizeof(struct first));
-  follow_set = malloc(nao_terminais.tamanho * sizeof(struct follow));
+  first_set = malloc(nao_terminais.tamanho * sizeof(struct grammar_set));
+  follow_set = malloc(nao_terminais.tamanho * sizeof(struct grammar_set));
   first();
   follow();
   constroiTabela();
@@ -86,7 +79,7 @@ void print_all() {
 
   print_first();
   printf("\n\n");
-  
+
   print_follow();
   printf("\n\n");
 }
@@ -233,7 +226,7 @@ void first() {
     chave = producao->elementos[0];
     elemento = &producao->elementos[1];
     if (set_contains(&terminais, *elemento)) {
-      first_add(chave, *elemento);
+      grammar_set_add(chave, *elemento);
     }
   }
 
@@ -253,17 +246,17 @@ void first() {
       do {
         // adiciona o elemento se for um terminal
         if (set_contains(&terminais, *elemento)) {
-          mudou |= first_add(chave, *elemento);
+          mudou |= grammar_set_add(chave, *elemento);
           break;
         }
 
         // comeca com nao terminal
         // adiciona todos os first deste nao terminal exceto vazio
-        struct first *f = get_first(*elemento);
+        struct grammar_set *f = get_grammar_set(*elemento);
         
         for (size_t i = 0; i < f->elementos.tamanho; i++) {
           if (f->elementos.elementos[i] != 'e') {
-            mudou |= first_add(chave, f->elementos.elementos[i]);
+            mudou |= grammar_set_add(chave, f->elementos.elementos[i]);
           }
         }
         // se nao terminal nao deriva vazio, passa a proxima producao
@@ -275,37 +268,10 @@ void first() {
       } while (*elemento != '\0');
       // todos os elementos da producao sao nao terminais e derivam vazio
       if (elemento == '\0') {
-        mudou |= first_add(chave, 'e');
+        mudou |= grammar_set_add(chave, 'e');
       }
     }
   } while (mudou);
-}
-
-bool first_add(char nao_terminal, char terminal) {
-  struct first *f = get_first(nao_terminal);
-  int tamanho_old = f->elementos.tamanho;
-  set_add(&f->elementos, terminal);
-
-  return tamanho_old != f->elementos.tamanho;
-}
-
-struct first *get_first(char nao_terminal) {
-  for (size_t i = 0; i < nao_terminais.tamanho; i++) {
-    if (nao_terminal == first_set[i].chave) {
-      return &first_set[i];
-    }
-  }
-  return NULL;
-}
-
-void print_first() {
-  printf("FIRST SET: \n{\n");
-  for (size_t i = 0; i < nao_terminais.tamanho; i++) {
-    printf("  {\n    Chave: %c, ", first_set[i].chave);
-    set_print(&first_set[i].elementos);
-    printf("  },\n");
-  }
-  printf("}\n");
 }
 
 void follow() {
@@ -322,7 +288,7 @@ void follow() {
   
   //RULE 1
   //ADD $ em S (final de cadeia no estado inicial)
-  follow_add('S', '$');
+  grammar_set_add('S', '$');
 
 
   for(int i = 0; i < producoes.tamanho; i++){
@@ -345,14 +311,14 @@ void follow() {
               for(int l = 0; l < first_set[k].elementos.tamanho; l++){
                 if('e' != first_set[k].elementos.elementos[l]){
                   //printf(" %c ", first_set[k].elementos.elementos[l]);
-                  follow_add(*anterior, first_set[k].elementos.elementos[l]);  
+                  grammar_set_add(*anterior, first_set[k].elementos.elementos[l]);  
                 }                
               }
               break;
             } 
           }
         } else {
-          follow_add(*anterior, *elemento);
+          grammar_set_add(*anterior, *elemento);
         }
       }
     } 
@@ -373,7 +339,7 @@ void follow() {
       for(int k = 0; k < nao_terminais.tamanho; k++){
         if(chave == follow_set[k].chave){
           for(int l = 0; l < follow_set[k].elementos.tamanho; l++){
-            mudou |= follow_add(*elemento, follow_set[k].elementos.elementos[l]);
+            mudou |= grammar_set_add(*elemento, follow_set[k].elementos.elementos[l]);
           }
           break;
         }
@@ -393,7 +359,7 @@ void follow() {
               for(int kk = 0; kk < nao_terminais.tamanho; kk++){
                 if(chave == follow_set[kk].chave){
                   for(int l = 0; l < follow_set[kk].elementos.tamanho; l++){
-                    mudou |= follow_add(*anterior, follow_set[kk].elementos.elementos[l]);
+                    mudou |= grammar_set_add(*anterior, follow_set[kk].elementos.elementos[l]);
                   }
                   break;
                 }
@@ -407,34 +373,39 @@ void follow() {
   } 
 }
 
-bool follow_add(char nao_terminal, char terminal){
-  int tamanho_old;
-  int i;
-  for (i = 0; i < nao_terminais.tamanho; i++) {
-    if (nao_terminal == follow_set[i].chave) {
-      tamanho_old = follow_set[i].elementos.tamanho;
-      set_add(&follow_set[i].elementos, terminal);
-      break;
-    }
-  }
-  return tamanho_old != follow_set[i].elementos.tamanho;
+bool grammar_set_add(char nao_terminal, char terminal) {
+  struct grammar_set *f = get_grammar_set(nao_terminal);
+  int tamanho_old = f->elementos.tamanho;
+  set_add(&f->elementos, terminal);
+
+  return tamanho_old != f->elementos.tamanho;
 }
 
-struct follow *get_follow(char nao_terminal) {
+struct grammar_set *get_grammar_set(char nao_terminal) {
   for (size_t i = 0; i < nao_terminais.tamanho; i++) {
-    if (nao_terminal == follow_set[i].chave) {
-      return &follow_set[i];
+    if (nao_terminal == first_set[i].chave) {
+      return &first_set[i];
     }
   }
   return NULL;
 }
 
-void print_follow() {
-  printf("FOLLOW SET: \n{");
+void print_first() {
+  printf("FIRST SET: \n{\n");
   for (size_t i = 0; i < nao_terminais.tamanho; i++) {
-    printf("{Chave: %c,\n", follow_set[i].chave);
+    printf("  {\n    Chave: %c, ", first_set[i].chave);
+    set_print(&first_set[i].elementos);
+    printf("  },\n");
+  }
+  printf("}\n");
+}
+
+void print_follow() {
+  printf("FOLLOW SET: \n{\n");
+  for (size_t i = 0; i < nao_terminais.tamanho; i++) {
+    printf("  {\n    Chave: %c, ", follow_set[i].chave);
     set_print(&follow_set[i].elementos);
-    printf("},\n");
+    printf("  },\n");
   }
   printf("}\n");
 }
