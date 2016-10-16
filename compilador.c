@@ -21,6 +21,7 @@ extern char buffer_err[];
 
 char nome_arquivo[60];
 
+void print_all();
 void lerArgumentos(int argc, char *argv[]);
 void ajuda();
 FILE *abre_arquivo(char * nome);
@@ -41,30 +42,42 @@ void constroiTabela();
 int main(int argc, char *argv[]) {
   lerArgumentos(argc, argv);
 
-  FILE * arquivo = abre_arquivo(nome_arquivo);
   producoes_init(&producoes);
   set_init(&nao_terminais);
   set_init(&terminais);
+
+  FILE * arquivo = abre_arquivo(nome_arquivo);
   parse_arquivo(arquivo);
   fclose(arquivo);
+  
+  first_set = malloc(nao_terminais.tamanho * sizeof(struct first));
+  first();
+  follow();
+  constroiTabela();
+
+  print_all();
+
+  free(first_set);
+  exit(EXIT_SUCCESS);
+}
+
+void print_all() {
   printf("\nTerminais:\n");
   set_print(&terminais);
   printf("\n");
+
   printf("Não terminais:\n");
   set_print(&nao_terminais);
   printf("\n");
+
   printf("Regras de Produção:\n");
   producoes_print(&producoes);
   printf("\n");
 
-  first_set = malloc(nao_terminais.tamanho * sizeof(struct first));
-  first();
   print_first();
-  follow();
-  constroiTabela();
-  free(first_set);
+  //print_follow();
+
   printf("\n\n");
-  exit(EXIT_SUCCESS);
 }
 
 void lerArgumentos(int argc, char *argv[]) {
@@ -193,20 +206,22 @@ char convertIntToChar(int num) {
 }
 
 void first() {
+  //inicializando first_set[i]
   for (size_t i = 0; i < nao_terminais.tamanho; i++) {
     first_set[i].chave = nao_terminais.elementos[i];
     set_init(&first_set[i].elementos);
   }
+
   struct regra *producao;
   char *elemento;
   char chave;
+
   //FIRST(A) = { t | A =>* tw for some w }
   for (int i = 0; i < producoes.tamanho; i++) {
     producao = &producoes.regras[i];
     chave = producao->elementos[0];
     elemento = &producao->elementos[1];
     if (set_contains(&terminais, *elemento)) {
-      // printf("first(%c) = %c\n", chave, *elemento);
       first_add(chave, *elemento);
     }
   }
@@ -218,14 +233,23 @@ void first() {
       producao = &producoes.regras[i];
       chave = producao->elementos[0];
       elemento = &producao->elementos[1];
+      
       // comeca com nao terminal
       if (set_contains(&terminais, *elemento)) {
         continue;
       }
+      
       do {
+        // adiciona o elemento se for um terminal
+        if (set_contains(&terminais, *elemento)) {
+          mudou |= first_add(chave, *elemento);
+          break;
+        }
+
         // comeca com nao terminal
         // adiciona todos os first deste nao terminal exceto vazio
         struct first *f = get_first(*elemento);
+        
         for (size_t i = 0; i < f->elementos.tamanho; i++) {
           if (f->elementos.elementos[i] != 'e') {
             mudou |= first_add(chave, f->elementos.elementos[i]);
@@ -247,16 +271,11 @@ void first() {
 }
 
 bool first_add(char nao_terminal, char terminal) {
-  int tamanho_old;
-  int i;
-  for (i = 0; i < nao_terminais.tamanho; i++) {
-    if (nao_terminal == first_set[i].chave) {
-      tamanho_old = first_set[i].elementos.tamanho;
-      set_add(&first_set[i].elementos, terminal);
-      break;
-    }
-  }
-  return tamanho_old != first_set[i].elementos.tamanho;
+  struct first *f = get_first(nao_terminal);
+  int tamanho_old = f->elementos.tamanho;
+  set_add(&f->elementos, terminal);
+
+  return tamanho_old != f->elementos.tamanho;
 }
 
 struct first *get_first(char nao_terminal) {
@@ -269,11 +288,11 @@ struct first *get_first(char nao_terminal) {
 }
 
 void print_first() {
-  printf("FIRST SET: \n{");
+  printf("FIRST SET: \n{\n");
   for (size_t i = 0; i < nao_terminais.tamanho; i++) {
-    printf("{Chave: %c,\n", first_set[i].chave);
+    printf("  {\n    Chave: %c, ", first_set[i].chave);
     set_print(&first_set[i].elementos);
-    printf("},\n");
+    printf("  },\n");
   }
   printf("}\n");
 }
