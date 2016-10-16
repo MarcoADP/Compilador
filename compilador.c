@@ -13,7 +13,13 @@ struct first {
   struct set elementos;
 };
 
+struct follow {
+  char chave;
+  struct set elementos;  
+};
+
 struct first *first_set;
+struct follow *follow_set;
 struct set terminais;
 struct set nao_terminais;
 struct producoes producoes;
@@ -37,6 +43,9 @@ bool first_add(char nao_terminal, char terminal);
 struct first *get_first(char nao_terminal);
 void print_first();
 void follow();
+bool follow_add(char nao_terminal, char terminal);
+struct follow *get_follow(char nao_terminal);
+void print_follow();
 void constroiTabela();
 
 int main(int argc, char *argv[]) {
@@ -51,6 +60,7 @@ int main(int argc, char *argv[]) {
   fclose(arquivo);
   
   first_set = malloc(nao_terminais.tamanho * sizeof(struct first));
+  follow_set = malloc(nao_terminais.tamanho * sizeof(struct follow));
   first();
   follow();
   constroiTabela();
@@ -75,8 +85,9 @@ void print_all() {
   printf("\n");
 
   print_first();
-  //print_follow();
-
+  printf("\n\n");
+  
+  print_follow();
   printf("\n\n");
 }
 
@@ -298,7 +309,134 @@ void print_first() {
 }
 
 void follow() {
-  //if()
+  for(size_t i = 0; i < nao_terminais.tamanho; i++){
+    follow_set[i].chave = nao_terminais.elementos[i];
+    set_init(&follow_set[i].elementos);
+  }
+
+  struct regra *producao;
+  int tam;
+  char *elemento;
+  char chave;
+  char *anterior;
+  
+  //RULE 1
+  //ADD $ em S (final de cadeia no estado inicial)
+  follow_add('S', '$');
+
+
+  for(int i = 0; i < producoes.tamanho; i++){
+    producao = &producoes.regras[i];
+    tam = producao->tamanho-1;
+    chave = producao->elementos[0];
+    
+    //RULE 2
+    //A -> alpha B betha 
+    //O que estão em First de Betha são follow de B ou seja Follow(B) <- First(betha)
+    for(int j = tam; j > 1; j--){
+      elemento = &producao->elementos[j];
+      anterior = &producao->elementos[j-1];
+      
+      if(set_contains(&nao_terminais, *anterior)){
+        if(set_contains(&nao_terminais, *elemento)){
+          for (int k = 0; k < nao_terminais.tamanho; k++) {
+            if (*elemento == first_set[k].chave) {
+              //printf("First de %c => ", *elemento);
+              for(int l = 0; l < first_set[k].elementos.tamanho; l++){
+                if('e' != first_set[k].elementos.elementos[l]){
+                  //printf(" %c ", first_set[k].elementos.elementos[l]);
+                  follow_add(*anterior, first_set[k].elementos.elementos[l]);  
+                }                
+              }
+              break;
+            } 
+          }
+        } else {
+          follow_add(*anterior, *elemento);
+        }
+      }
+    } 
+  }
+
+  bool mudou = false;
+
+  for(int i = 0; i < producoes.tamanho; i++){
+    producao = &producoes.regras[i];
+    tam = producao->tamanho-1;
+    chave = producao->elementos[0];
+
+    //RULE 3
+    //A -> alpha B
+    //O que estão em Follow A estão em Follow B ou seja Follow(B) <- Follow(A)
+    elemento = &producao->elementos[tam];
+    if(set_contains(&nao_terminais, *elemento)){
+      for(int k = 0; k < nao_terminais.tamanho; k++){
+        if(chave == follow_set[k].chave){
+          for(int l = 0; l < follow_set[k].elementos.tamanho; l++){
+            mudou |= follow_add(*elemento, follow_set[k].elementos.elementos[l]);
+          }
+          break;
+        }
+      }
+    }
+
+    //RULE 4
+    //A -> alpha B betha
+    //Se First(B) contem vazio, entao Follow A em Follow B, ou seja Follow(B) <- Follow(A) se betha tem vazio
+    for(int j = tam; j > 1; j--){
+      elemento = &producao->elementos[j];
+      anterior = &producao->elementos[j-1];
+      if(set_contains(&nao_terminais, *elemento)){
+        for(int k = 0; k < nao_terminais.tamanho; k++){
+          if(*elemento == first_set[k].chave){
+            if(set_contains(&first_set[k].elementos, 'e')){
+              for(int kk = 0; kk < nao_terminais.tamanho; kk++){
+                if(chave == follow_set[kk].chave){
+                  for(int l = 0; l < follow_set[kk].elementos.tamanho; l++){
+                    mudou |= follow_add(*anterior, follow_set[kk].elementos.elementos[l]);
+                  }
+                  break;
+                }
+              }
+            }
+            break;
+          }
+        }
+      }
+    }
+  } 
+}
+
+bool follow_add(char nao_terminal, char terminal){
+  int tamanho_old;
+  int i;
+  for (i = 0; i < nao_terminais.tamanho; i++) {
+    if (nao_terminal == follow_set[i].chave) {
+      tamanho_old = follow_set[i].elementos.tamanho;
+      set_add(&follow_set[i].elementos, terminal);
+      break;
+    }
+  }
+  return tamanho_old != follow_set[i].elementos.tamanho;
+}
+
+struct follow *get_follow(char nao_terminal) {
+  for (size_t i = 0; i < nao_terminais.tamanho; i++) {
+    if (nao_terminal == follow_set[i].chave) {
+      return &follow_set[i];
+    }
+  }
+  return NULL;
+}
+
+void print_follow() {
+  printf("FOLLOW SET: \n{");
+  for (size_t i = 0; i < nao_terminais.tamanho; i++) {
+    printf("{Chave: %c,\n", follow_set[i].chave);
+    set_print(&follow_set[i].elementos);
+    printf("},\n");
+  }
+  printf("}\n");
 }
 
 void constroiTabela(){
