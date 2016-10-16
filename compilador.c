@@ -294,6 +294,7 @@ void follow() {
     follow_set[i].chave = nao_terminais.elementos[i];
     set_init(&follow_set[i].elementos);
   }
+
   struct regra *producao;
   int tam;
   char *elemento;
@@ -316,9 +317,6 @@ void follow() {
     for(int j = tam; j > 1; j--){
       elemento = &producao->elementos[j];
       anterior = &producao->elementos[j-1];
-
-      //printf("%c-%d   %c-%d\n", *elemento, j, *anterior, j-1);
-
       
       if(set_contains(&nao_terminais, *anterior)){
         if(set_contains(&nao_terminais, *elemento)){
@@ -338,130 +336,56 @@ void follow() {
           follow_add(*anterior, *elemento);
         }
       }
-      //printf("\n\n");
     } 
   }
 
+  bool mudou = false;
 
-  bool mudou;
-  //do{
+  for(int i = 0; i < producoes.tamanho; i++){
+    producao = &producoes.regras[i];
+    tam = producao->tamanho-1;
+    chave = producao->elementos[0];
 
-    mudou = false;
-    printf("MUDOU => %d\n", mudou);
+    //RULE 3
+    //A -> alpha B
+    //O que estão em Follow A estão em Follow B ou seja Follow(B) <- Follow(A)
+    elemento = &producao->elementos[tam];
+    if(set_contains(&nao_terminais, *elemento)){
+      for(int k = 0; k < nao_terminais.tamanho; k++){
+        if(chave == follow_set[k].chave){
+          for(int l = 0; l < follow_set[k].elementos.tamanho; l++){
+            mudou |= follow_add(*elemento, follow_set[k].elementos.elementos[l]);
+          }
+          break;
+        }
+      }
+    }
 
-    for(int i = 0; i < producoes.tamanho; i++){
-      producao = &producoes.regras[i];
-      tam = producao->tamanho-1;
-      chave = producao->elementos[0];
-
-
-      //RULE 3
-      //A -> alpha B
-      //O que estão em Follow A estão em Follow B ou seja Follow(B) <- Follow(A)
-      elemento = &producao->elementos[tam];
+    //RULE 4
+    //A -> alpha B betha
+    //Se First(B) contem vazio, entao Follow A em Follow B, ou seja Follow(B) <- Follow(A) se betha tem vazio
+    for(int j = tam; j > 1; j--){
+      elemento = &producao->elementos[j];
+      anterior = &producao->elementos[j-1];
       if(set_contains(&nao_terminais, *elemento)){
         for(int k = 0; k < nao_terminais.tamanho; k++){
-          if(chave == follow_set[k].chave){
-            for(int l = 0; l < follow_set[k].elementos.tamanho; l++){
-              mudou |= follow_add(*elemento, follow_set[k].elementos.elementos[l]);
-            }
-            break;
-          }
-        }
-      }
-
-      //RULE 4
-      //A -> alpha B betha
-      //Se First(B) contem vazio, entao Follow A em Follow B, ou seja Follow(B) <- Follow(A) se betha tem vazio
-      for(int j = tam; j > 1; j--){
-        elemento = &producao->elementos[j];
-        anterior = &producao->elementos[j-1];
-        if(set_contains(&nao_terminais, *elemento)){
-          for(int k = 0; k < nao_terminais.tamanho; k++){
-            if(*elemento == first_set[k].chave){
-              if(set_contains(&first_set[k].elementos, 'e')){
-                for(int kk = 0; kk < nao_terminais.tamanho; kk++){
-                  if(chave == follow_set[kk].chave){
-                    for(int l = 0; l < follow_set[kk].elementos.tamanho; l++){
-                      mudou |= follow_add(*anterior, follow_set[kk].elementos.elementos[l]);
-                    }
-                    break;
+          if(*elemento == first_set[k].chave){
+            if(set_contains(&first_set[k].elementos, 'e')){
+              for(int kk = 0; kk < nao_terminais.tamanho; kk++){
+                if(chave == follow_set[kk].chave){
+                  for(int l = 0; l < follow_set[kk].elementos.tamanho; l++){
+                    mudou |= follow_add(*anterior, follow_set[kk].elementos.elementos[l]);
                   }
+                  break;
                 }
               }
-              break;
-            }
-          }
-        }
-      }
-
-    } 
-
-  //} while(mudou);
-
-
-
-
-
-  //FOLLOW(A) = {t | B -> alpha A t betha}
-  /*for(int i = 0; i < producoes.tamanho; i++){
-    producao = &producoes.regras[i];
-    for(int j = 2; j < producao->tamanho; j++){
-      anterior = &producao->elementos[j-1];
-      elemento = &producao->elementos[j];
-      if(!set_contains(&nao_terminais, *elemento)){
-        follow_add(*anterior, * elemento);
-      }
-    }
-  }
-
-  bool mudou;
-
-  do {
-    mudou = false;
-    printf("MUDOU %d\n", mudou);
-    for(int i = 0; i < producoes.tamanho; i++){
-      producao = &producoes.regras[i];
-      chave = producao->elementos[0];
-      for(int j = 2; j < producao->tamanho; j++){
-        anterior = &producao->elementos[j-1];
-        elemento = &producao->elementos[j];
-        //A -> alpha B betha Follow(B) = Follow(B) + First(betha)/vazio 
-        if(set_contains(&nao_terminais, *anterior) && set_contains(&nao_terminais, *elemento)){
-          for (int k = 0; k < nao_terminais.tamanho; k++) {
-            if (*elemento == first_set[k].chave) {
-              for(int l = 0; l < first_set[k].elementos.tamanho; l++){
-                if('e' != first_set[k].elementos.elementos[l]){
-                  mudou |= follow_add(*anterior, first_set[k].elementos.elementos[l]);  
-                }                
-              }
-              break;
-            }
-          }
-        }
-      }
-
-      //A -> alpha B Follow(A) = Follow(B)
-      elemento = &producao->elementos[producao->tamanho-1]; 
-      //printf("%d -- %c\n", i, *elemento);
-      if(set_contains(&nao_terminais, *elemento)){
-        printf("%d -- %c\n", i, *elemento);
-        for (int k = 0; k < nao_terminais.tamanho; k++) {
-          if (*elemento == follow_set[k].chave) {
-            for(int l = 0; l < follow_set[k].elementos.tamanho; l++){
-              mudou |= follow_add(chave, follow_set[k].elementos.elementos[l]);  
             }
             break;
           }
         }
       }
-
-
-
-
     }
-
-  } while(mudou);*/
+  } 
 }
 
 bool follow_add(char nao_terminal, char terminal){
@@ -487,7 +411,6 @@ struct follow *get_follow(char nao_terminal) {
 }
 
 void print_follow() {
-  printf("\n\n");
   printf("FOLLOW SET: \n{");
   for (size_t i = 0; i < nao_terminais.tamanho; i++) {
     printf("{Chave: %c,\n", follow_set[i].chave);
