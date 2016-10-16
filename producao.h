@@ -26,5 +26,6 @@ void regra_init(struct regra *regra);
 bool regra_add(struct regra *regra, char elem);
 bool regra_full(struct regra *regra);
 void regra_print(struct regra *regra);
+char *formata_producao(char *producao);
 
 #endif

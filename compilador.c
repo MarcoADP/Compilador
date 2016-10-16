@@ -40,6 +40,7 @@ struct grammar_set *get_grammar_set(struct grammar_set *s, char nao_terminal);
 void print_first();
 void print_follow();
 void constroiTabela();
+void print_tabela();
 
 int main(int argc, char *argv[]) {
   lerArgumentos(argc, argv);
@@ -82,6 +83,8 @@ void print_all() {
 
   print_follow();
   printf("\n\n");
+
+  print_tabela();
 }
 
 void lerArgumentos(int argc, char *argv[]) {
@@ -443,4 +446,51 @@ void constroiTabela(){
     // }
     //
     // //retornar a tabela
+}
+
+void print_tabela() {
+  int tabela[nao_terminais.tamanho][terminais.tamanho];
+
+  for (int i = 0; i < nao_terminais.tamanho; ++i) {
+    for (int j = 0; j < terminais.tamanho; ++j) {
+      tabela[i][j] = 0;
+    }
+  }
+
+  int maior = -1;
+  for (int i = 0; i < producoes.tamanho; ++i) {
+    if (producoes.regras[i].tamanho > maior) {
+      maior = producoes.regras[i].tamanho;
+    }
+  }
+  maior += 6; // para centralizar regra S -> X1X2...Xn
+  if (maior % 2 != 0) {
+    maior++; // deixa como número par
+  }
+
+  printf("TABELA DE PREDICAO\n");
+  printf("%-*c|", maior, ' ');
+  for (int i = 0; i < terminais.tamanho; ++i) {
+    printf("%*c%*c|", maior/2, terminais.elementos[i], maior/2, ' ');
+  }
+  printf("\n");
+  for (int i = 0; i < terminais.tamanho+1; ++i) {
+    for (int i = 0; i < maior; ++i) {
+      printf("-");
+    }
+    printf("|");
+  }
+  printf("\n");
+
+  for (int i = 0; i < nao_terminais.tamanho; ++i) {
+    printf("%*c%*c|", maior/2, nao_terminais.elementos[i], maior/2, ' ');
+    for (int j = 0; j < terminais.tamanho; ++j) {
+      int ptr_producao = tabela[i][j]; // Ponteiro para a produção
+      struct regra *producao = &producoes.regras[ptr_producao];
+      char *producao_formatado = formata_producao(producao->elementos);
+      printf(" %-*s|", maior-1, producao_formatado);
+      free(producao_formatado);
+    }
+    printf("\n");
+  }
 }

@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "producao.h"
 
 void producoes_init(struct producoes *producoes) {
@@ -59,4 +60,10 @@ bool regra_contains(struct regra *r, char elem) {
 void regra_print(struct regra *r) {
   r->elementos[r->tamanho] = '\0';
   printf("REGRA: {tamanho: %d, \"%s\"}\n", r->tamanho, r->elementos);
+}
+
+char *formata_producao(char *producao) {
+  char *formatado = malloc(sizeof(char) * REGRA_TAMANHO_MAX);
+  sprintf(formatado, "%c -> %s", producao[0], &producao[1]);
+  return formatado;
 }
