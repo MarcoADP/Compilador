@@ -440,33 +440,69 @@ void print_follow() {
 }
 
 void constroiTabela(){
-    // int tabela[contNaoTerminais+1][contTerminais+1];
-    // int i, j;
-    // for(i = 0; i <= contNaoTerminais; i++){
-    //     for(j = 0; j <= contTerminais; j++){
-    //         tabela[i][j] = 35;
-    //     }
-    // }
-    //
-    // for(i = 1; i <= contNaoTerminais; i++){
-    //     //printf("\n%c", listaNaoTerminais[i-1]);
-    //     tabela[i][0] = convertCharToInt(listaNaoTerminais[i-1]);
-    // }
-    //
-    // for(i = 1; i <= contTerminais; i++){
-    //     //printf("\n%c", listaNaoTerminais[i-1]);
-    //     tabela[0][i] = convertCharToInt(listaTerminais[i-1]);
-    // }
-    //
-    // //PREENCHER A TABELA!!!
-    //
-    // printf("\n");
-    // for(i = 0; i <= contNaoTerminais; i++){
-    //     printf("\n");
-    //     for(j = 0; j <= contTerminais; j++){
-    //         printf("%c  ", convertIntToChar(tabela[i][j]));
-    //     }
-    // }
-    //
-    // //retornar a tabela
+  struct regra *producao;
+  int tam;
+  char *elemento;
+  char chave;
+
+  for(int i = 0; i < producoes.tamanho;i++){
+    producao = &producoes.regras[i];
+    tam = producao->tamanho-1;
+    chave = producao->elementos[0];
+    
+    //A -> alpha - correndo em cada elemento da producao
+    for(int j = 1; j <= tam; j++){
+      elemento = &producao->elementos[j];
+      
+      //se elemento é NT
+      if(set_contains(&nao_terminais, *elemento)){
+        
+        //percorrendo k 0-|NT| ate achar o first do elemento
+        for (int k = 0; k < nao_terminais.tamanho; k++) {
+
+          //achou o first do elemento
+          if (*elemento == first_set[k].chave) {
+            
+            //Regra 1
+            for(int l = 0; l < first_set[k].elementos.tamanho; l++){
+              //add producao em M[chave, first_set[k].elementos.elementos[l]]
+            }
+
+            //Regra 2
+            if(set_contains(&first_set[k].elementos, 'e')){
+              
+              //percorrendo n 0-|NT| ate achar o follow da chave
+              for(int n = 0; n < nao_terminais.tamanho; n++){
+
+                //achou o follow da chave
+                if(chave == follow_set[n].chave){
+
+                  //percorrendo os elementos do follow(chave)
+                  for(int b = 0; b < follow_set[n].elementos.tamanho; b++){
+
+                    //add producao em M[chave, follow_set[n].elementos.elementos[l]]
+
+                  }
+
+                  //Regra 3
+                  if(set_contains(&follow_set[k].elementos, '$')){
+                    //add producao em M[chave, $]
+                  }
+
+                  break;
+                }
+              }
+            }
+            break;
+          }
+        }
+      }
+    
+
+
+    }
+  
+
+
+  }
 }
