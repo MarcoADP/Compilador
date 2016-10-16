@@ -35,8 +35,8 @@ int convertCharToInt(char ch);
 char convertIntToChar(int num);
 void first();
 void follow();
-bool grammar_set_add(char nao_terminal, char terminal);
-struct grammar_set *get_grammar_set(char nao_terminal);
+bool grammar_set_add(struct grammar_set *s, char nao_terminal, char terminal);
+struct grammar_set *get_grammar_set(struct grammar_set *s, char nao_terminal);
 void print_first();
 void print_follow();
 void constroiTabela();
@@ -226,7 +226,7 @@ void first() {
     chave = producao->elementos[0];
     elemento = &producao->elementos[1];
     if (set_contains(&terminais, *elemento)) {
-      grammar_set_add(chave, *elemento);
+      grammar_set_add(first_set, chave, *elemento);
     }
   }
 
@@ -246,17 +246,17 @@ void first() {
       do {
         // adiciona o elemento se for um terminal
         if (set_contains(&terminais, *elemento)) {
-          mudou |= grammar_set_add(chave, *elemento);
+          mudou |= grammar_set_add(first_set, chave, *elemento);
           break;
         }
 
         // comeca com nao terminal
         // adiciona todos os first deste nao terminal exceto vazio
-        struct grammar_set *f = get_grammar_set(*elemento);
+        struct grammar_set *f = get_grammar_set(first_set, *elemento);
         
         for (size_t i = 0; i < f->elementos.tamanho; i++) {
           if (f->elementos.elementos[i] != 'e') {
-            mudou |= grammar_set_add(chave, f->elementos.elementos[i]);
+            mudou |= grammar_set_add(first_set, chave, f->elementos.elementos[i]);
           }
         }
         // se nao terminal nao deriva vazio, passa a proxima producao
@@ -268,7 +268,7 @@ void first() {
       } while (*elemento != '\0');
       // todos os elementos da producao sao nao terminais e derivam vazio
       if (elemento == '\0') {
-        mudou |= grammar_set_add(chave, 'e');
+        mudou |= grammar_set_add(first_set, chave, 'e');
       }
     }
   } while (mudou);
@@ -288,8 +288,7 @@ void follow() {
   
   //RULE 1
   //ADD $ em S (final de cadeia no estado inicial)
-  grammar_set_add('S', '$');
-
+  grammar_set_add(follow_set, 'S', '$');
 
   for(int i = 0; i < producoes.tamanho; i++){
     producao = &producoes.regras[i];
@@ -310,15 +309,14 @@ void follow() {
               //printf("First de %c => ", *elemento);
               for(int l = 0; l < first_set[k].elementos.tamanho; l++){
                 if('e' != first_set[k].elementos.elementos[l]){
-                  //printf(" %c ", first_set[k].elementos.elementos[l]);
-                  grammar_set_add(*anterior, first_set[k].elementos.elementos[l]);  
+                  grammar_set_add(follow_set, *anterior, first_set[k].elementos.elementos[l]);  
                 }                
               }
               break;
             } 
           }
         } else {
-          grammar_set_add(*anterior, *elemento);
+          grammar_set_add(follow_set, *anterior, *elemento);
         }
       }
     } 
@@ -339,7 +337,7 @@ void follow() {
       for(int k = 0; k < nao_terminais.tamanho; k++){
         if(chave == follow_set[k].chave){
           for(int l = 0; l < follow_set[k].elementos.tamanho; l++){
-            mudou |= grammar_set_add(*elemento, follow_set[k].elementos.elementos[l]);
+            mudou |= grammar_set_add(follow_set, *elemento, follow_set[k].elementos.elementos[l]);
           }
           break;
         }
@@ -359,7 +357,7 @@ void follow() {
               for(int kk = 0; kk < nao_terminais.tamanho; kk++){
                 if(chave == follow_set[kk].chave){
                   for(int l = 0; l < follow_set[kk].elementos.tamanho; l++){
-                    mudou |= grammar_set_add(*anterior, follow_set[kk].elementos.elementos[l]);
+                    mudou |= grammar_set_add(follow_set, *anterior, follow_set[kk].elementos.elementos[l]);
                   }
                   break;
                 }
@@ -373,18 +371,23 @@ void follow() {
   } 
 }
 
-bool grammar_set_add(char nao_terminal, char terminal) {
-  struct grammar_set *f = get_grammar_set(nao_terminal);
+bool grammar_set_add(struct grammar_set *s, char nao_terminal, char terminal) {
+  struct grammar_set *f = get_grammar_set(s, nao_terminal);
+
+  if (f == NULL) {
+    return false;
+  }
+
   int tamanho_old = f->elementos.tamanho;
   set_add(&f->elementos, terminal);
 
   return tamanho_old != f->elementos.tamanho;
 }
 
-struct grammar_set *get_grammar_set(char nao_terminal) {
+struct grammar_set *get_grammar_set(struct grammar_set *s, char nao_terminal) {
   for (size_t i = 0; i < nao_terminais.tamanho; i++) {
-    if (nao_terminal == first_set[i].chave) {
-      return &first_set[i];
+    if (nao_terminal == s[i].chave) {
+      return &s[i];
     }
   }
   return NULL;
