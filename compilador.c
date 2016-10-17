@@ -18,6 +18,7 @@ struct grammar_set *follow_set;
 struct set terminais;
 struct set nao_terminais;
 struct producoes producoes;
+int **tabela_set;
 extern char buffer_err[];
 
 char nome_arquivo[60];
@@ -41,6 +42,11 @@ void print_first();
 void print_follow();
 void constroiTabela();
 void print_tabela();
+int** criaMatriz(int l, int c);
+void add_matriz(int** matriz, int l, int c, int conteudo);
+int calcula_posicao_naoterminais(char c);
+int calcula_posicao_terminais(char c);
+void mostra_matriz(int** matriz);
 
 int main(int argc, char *argv[]) {
   lerArgumentos(argc, argv);
@@ -55,10 +61,12 @@ int main(int argc, char *argv[]) {
   
   first_set = malloc(nao_terminais.tamanho * sizeof(struct grammar_set));
   follow_set = malloc(nao_terminais.tamanho * sizeof(struct grammar_set));
+  tabela_set = criaMatriz(nao_terminais.tamanho, terminais.tamanho+1);
+
   first();
   follow();
   constroiTabela();
-
+  
   print_all();
 
   free(first_set);
@@ -85,6 +93,7 @@ void print_all() {
   printf("\n\n");
 
   print_tabela();
+  printf("\n\n");
 }
 
 void lerArgumentos(int argc, char *argv[]) {
@@ -417,46 +426,135 @@ void print_follow() {
 }
 
 void constroiTabela(){
-    // int tabela[contNaoTerminais+1][contTerminais+1];
-    // int i, j;
-    // for(i = 0; i <= contNaoTerminais; i++){
-    //     for(j = 0; j <= contTerminais; j++){
-    //         tabela[i][j] = 35;
-    //     }
-    // }
-    //
-    // for(i = 1; i <= contNaoTerminais; i++){
-    //     //printf("\n%c", listaNaoTerminais[i-1]);
-    //     tabela[i][0] = convertCharToInt(listaNaoTerminais[i-1]);
-    // }
-    //
-    // for(i = 1; i <= contTerminais; i++){
-    //     //printf("\n%c", listaNaoTerminais[i-1]);
-    //     tabela[0][i] = convertCharToInt(listaTerminais[i-1]);
-    // }
-    //
-    // //PREENCHER A TABELA!!!
-    //
-    // printf("\n");
-    // for(i = 0; i <= contNaoTerminais; i++){
-    //     printf("\n");
-    //     for(j = 0; j <= contTerminais; j++){
-    //         printf("%c  ", convertIntToChar(tabela[i][j]));
-    //     }
-    // }
-    //
-    // //retornar a tabela
+  struct regra *producao;
+  char *elemento;
+  char chave;
+
+  for(int i = 0; i < producoes.tamanho;i++){
+    producao = &producoes.regras[i];
+    //tam = producao->tamanho-1;
+    chave = producao->elementos[0];
+    int linha, coluna;
+    //A -> alpha - correndo em cada elemento da producao
+    for(int j = 1; j <= 1; j++){
+      elemento = &producao->elementos[j];
+      
+      //se elemento é NT
+      if(set_contains(&nao_terminais, *elemento)){
+        
+        //percorrendo k 0-|NT| ate achar o first do elemento
+        for (int k = 0; k < nao_terminais.tamanho; k++) {
+
+          //achou o first do elemento
+          if (*elemento == first_set[k].chave) {
+            
+            //Regra 1
+            for(int l = 0; l < first_set[k].elementos.tamanho; l++){
+              linha = calcula_posicao_naoterminais(chave);
+              coluna = calcula_posicao_terminais(first_set[k].elementos.elementos[l]); 
+              tabela_set[linha][coluna] = i;
+              //add producao em M[chave, first_set[k].elementos.elementos[l]]
+            }
+
+            //Regra 2
+            if(set_contains(&first_set[k].elementos, 'e')){
+              
+              //percorrendo n 0-|NT| ate achar o follow da chave
+              for(int n = 0; n < nao_terminais.tamanho; n++){
+
+                //achou o follow da chave
+                if(chave == follow_set[n].chave){
+
+                  //percorrendo os elementos do follow(chave)
+                  for(int b = 0; b < follow_set[n].elementos.tamanho; b++){
+                    linha = calcula_posicao_naoterminais(chave);
+                    coluna = calcula_posicao_terminais(follow_set[n].elementos.elementos[b]);
+                    tabela_set[linha][coluna] = i;
+                    //add producao em M[chave, follow_set[n].elementos.elementos[l]]
+
+                  }
+
+                  //Regra 3
+                  if(set_contains(&follow_set[k].elementos, '$')){
+                    linha = calcula_posicao_naoterminais(chave);
+                    //coluna = calcula_posicao_terminais('$');
+                    tabela_set[linha][terminais.tamanho] = i;
+                    //add producao em M[chave, $]
+                  }
+
+                  break;
+                }
+              }
+            }
+            break;
+          }
+        }
+      } else {
+        linha = calcula_posicao_naoterminais(chave);
+        coluna = calcula_posicao_terminais(*elemento);
+        tabela_set[linha][coluna] = i;
+        if(*elemento == 'e'){
+          for(int n = 0; n < nao_terminais.tamanho; n++){
+
+          //achou o follow da chave
+            if(chave == follow_set[n].chave){
+              for(int b = 0; b < follow_set[n].elementos.tamanho; b++){
+                linha = calcula_posicao_naoterminais(chave);
+                coluna = calcula_posicao_terminais(follow_set[n].elementos.elementos[b]);
+                if(follow_set[n].elementos.elementos[b] != '$'){
+                  tabela_set[linha][coluna] = i;
+                }
+                //add producao em M[chave, follow_set[n].elementos.elementos[l]]
+              }
+
+              if(set_contains(&follow_set[n].elementos, '$')){
+                linha = calcula_posicao_naoterminais(chave);
+                coluna = terminais.tamanho;
+                tabela_set[linha][coluna] = i;
+              }
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+int **criaMatriz(int l, int c){
+    int **new_matrix = malloc(l * sizeof(int *));
+    new_matrix[0] = calloc(l * c, sizeof(int));
+    for (int i = 0; i < l; i++)
+        new_matrix[i] = (*new_matrix + i * c);
+
+    for(int i = 0; i < l; i++){
+      for(int j = 0; j < c; j++){
+        new_matrix[i][j] = -1;
+      }
+    }
+    return new_matrix;
+}
+
+int calcula_posicao_terminais(char c){
+  for(int i = 0; i < terminais.tamanho; i++){
+    if(c == terminais.elementos[i]){
+      return i;
+    }
+  }
+  return -1;
+}
+
+int calcula_posicao_naoterminais(char c){
+  for(int i = 0; i < nao_terminais.tamanho; i++){
+    //printf("%c -- %c\n", c, nao_terminais.elementos[i]);
+    if(c == nao_terminais.elementos[i]){
+      return i;
+    }
+  }
+  return -1;
 }
 
 void print_tabela() {
-  int tabela[nao_terminais.tamanho][terminais.tamanho];
-
-  for (int i = 0; i < nao_terminais.tamanho; ++i) {
-    for (int j = 0; j < terminais.tamanho; ++j) {
-      tabela[i][j] = 0;
-    }
-  }
-
   int maior = -1;
   for (int i = 0; i < producoes.tamanho; ++i) {
     if (producoes.regras[i].tamanho > maior) {
@@ -468,11 +566,16 @@ void print_tabela() {
     maior++; // deixa como número par
   }
 
-  printf("TABELA DE PREDICAO\n");
+  int a;
+  printf("TABELA PREDITIVA\n");
   printf("%-*c|", maior, ' ');
   for (int i = 0; i < terminais.tamanho; ++i) {
-    printf("%*c%*c|", maior/2, terminais.elementos[i], maior/2, ' ');
+    if (terminais.elementos[i] != 'e')
+      printf("%*c%*c|", maior/2, terminais.elementos[i], maior/2, ' ');
+    else 
+      a = i;
   }
+  printf("%*c%*c|", maior/2, '$', maior/2, ' ');
   printf("\n");
   for (int i = 0; i < terminais.tamanho+1; ++i) {
     for (int i = 0; i < maior; ++i) {
@@ -484,8 +587,14 @@ void print_tabela() {
 
   for (int i = 0; i < nao_terminais.tamanho; ++i) {
     printf("%*c%*c|", maior/2, nao_terminais.elementos[i], maior/2, ' ');
-    for (int j = 0; j < terminais.tamanho; ++j) {
-      int ptr_producao = tabela[i][j]; // Ponteiro para a produção
+    for (int j = 0; j <= terminais.tamanho; ++j) {
+      if (a == j) 
+        continue;
+      int ptr_producao = tabela_set[i][j]; // Ponteiro para a produção
+      if (ptr_producao == -1) {
+        printf(" %-*s|", maior-1, " ");
+        continue;
+      }
       struct regra *producao = &producoes.regras[ptr_producao];
       char *producao_formatado = formata_producao(producao->elementos);
       printf(" %-*s|", maior-1, producao_formatado);
@@ -493,4 +602,34 @@ void print_tabela() {
     }
     printf("\n");
   }
+}
+
+void mostra_matriz(int** matriz){
+  printf("\nTabela Preditiva\n");
+  printf("\t ");
+  int a;
+  for(int i = 0; i < terminais.tamanho; i++){
+    if(terminais.elementos[i] != 'e'){
+      printf("%c\t", terminais.elementos[i]);
+    } else {
+      a = i;
+    }
+  }
+  printf("$\t");
+  for(int i = 0; i < nao_terminais.tamanho; i++){
+    printf("\n");
+    printf("%c\t", nao_terminais.elementos[i]);
+    for(int j = 0; j <= terminais.tamanho; j++){
+      if(j == a){
+        continue;
+      }
+      if(matriz[i][j] != -1){
+        printf("%s\t", producoes.regras[matriz[i][j]].elementos);
+      } else {
+        printf("%d\t", matriz[i][j]);
+      }
+      
+    }
+  }
+  printf("\n\n");
 }
