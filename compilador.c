@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
   
   first_set = malloc(nao_terminais.tamanho * sizeof(struct first));
   follow_set = malloc(nao_terminais.tamanho * sizeof(struct follow));
-  tabela_set = criaMatriz(nao_terminais.tamanho, terminais.tamanho);
+  tabela_set = criaMatriz(nao_terminais.tamanho, terminais.tamanho+1);
 
   first();
   follow();
@@ -450,13 +450,37 @@ void print_follow() {
 
 void constroiTabela(){
   struct regra *producao;
-  int tam;
+  //int tam;
   char *elemento;
   char chave;
+  //int linha, coluna;
+  /*for(int i = 0; i < producoes.tamanho; i++){
+    producao = &producoes.regras[i];
+    chave = producao->elementos[0];
+    linha = calcula_posicao_naoterminais(chave);
+    //percorrendo k 0-|NT| ate achar o first do elemento
+    for (int k = 0; k < nao_terminais.tamanho; k++) {
+
+      //achou o first do elemento
+      if (chave == first_set[k].chave) {
+        for(int j = 0; j < first_set[k].elementos.tamanho; j++){
+          coluna = calcula_posicao_terminais(first_set[k].elementos.elementos[j]);
+          tabela_set[linha][coluna] = i;
+        }
+
+
+
+        if(set_contains(&first_set[k].elementos, 'e')){
+
+        }
+        break;
+      }
+    }
+  }*/
 
   for(int i = 0; i < producoes.tamanho;i++){
     producao = &producoes.regras[i];
-    tam = producao->tamanho-1;
+    //tam = producao->tamanho-1;
     chave = producao->elementos[0];
     int linha, coluna;
     //A -> alpha - correndo em cada elemento da producao
@@ -501,8 +525,8 @@ void constroiTabela(){
                   //Regra 3
                   if(set_contains(&follow_set[k].elementos, '$')){
                     linha = calcula_posicao_naoterminais(chave);
-                    coluna = calcula_posicao_terminais('$');
-                    tabela_set[linha][coluna] = i;
+                    //coluna = calcula_posicao_terminais('$');
+                    tabela_set[linha][terminais.tamanho] = i;
                     //add producao em M[chave, $]
                   }
 
@@ -513,9 +537,48 @@ void constroiTabela(){
             break;
           }
         }
+      } else {
+        linha = calcula_posicao_naoterminais(chave);
+        coluna = calcula_posicao_terminais(*elemento);
+        tabela_set[linha][coluna] = i;
+        if(*elemento == 'e'){
+          for(int n = 0; n < nao_terminais.tamanho; n++){
+
+          //achou o follow da chave
+            if(chave == follow_set[n].chave){
+              for(int b = 0; b < follow_set[n].elementos.tamanho; b++){
+                printf("CHAVE => %c\n", chave);
+                linha = calcula_posicao_naoterminais(chave);
+                coluna = calcula_posicao_terminais(follow_set[n].elementos.elementos[b]);
+                if(follow_set[n].elementos.elementos[b] != '$'){
+                  tabela_set[linha][coluna] = i;
+                }
+                //add producao em M[chave, follow_set[n].elementos.elementos[l]]
+
+              }
+
+              if(set_contains(&follow_set[n].elementos, '$')){
+                linha = calcula_posicao_naoterminais(chave);
+                coluna = terminais.tamanho;
+                tabela_set[linha][coluna] = i;
+              }
+              break;
+            }
+          }
+        }
+        //percorrendo n 0-|NT| ate achar o follow da chave
+        /*for(int n = 0; n < nao_terminais.tamanho; n++){
+
+          //achou o follow da chave
+          if(chave == follow_set[n].chave){
+            //coluna = calcula_posicao_terminais('$');
+            //tabela_set[linha][terminais.tamanho] = i;
+            break;
+          }
+        }*/
       }
     
-
+      
 
     }
   
@@ -559,13 +622,27 @@ int calcula_posicao_naoterminais(char c){
 
 void mostra_matriz(int** matriz){
   printf("\nTabela Preditiva\n");
-  for(int i = 0; i <nao_terminais.tamanho; i++){
+  printf("\t ");
+  int a;
+  for(int i = 0; i < terminais.tamanho; i++){
+    if(terminais.elementos[i] != 'e'){
+      printf("%c\t", terminais.elementos[i]);
+    } else {
+      a = i;
+    }
+  }
+  printf("$\t");
+  for(int i = 0; i < nao_terminais.tamanho; i++){
     printf("\n");
-    for(int j = 0; j < terminais.tamanho; j++){
+    printf("%c\t", nao_terminais.elementos[i]);
+    for(int j = 0; j <= terminais.tamanho; j++){
+      if(j == a){
+        continue;
+      }
       if(matriz[i][j] != -1){
-        printf(" %s ", producoes.regras[matriz[i][j]].elementos);
+        printf("%s\t", producoes.regras[matriz[i][j]].elementos);
       } else {
-        printf(" %d ", matriz[i][j]);
+        printf("%d\t", matriz[i][j]);
       }
       
     }
