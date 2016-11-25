@@ -441,7 +441,7 @@ void constroiTabela(){
     chave = producao->elementos[0];
     int linha, coluna;
     //A -> alpha - correndo em cada elemento da producao
-    for(int j = 1; j <= 1; j++){
+    for(int j = 1; j < producao->tamanho; j++){
       elemento = &producao->elementos[j];
 
       //se elemento é NT
