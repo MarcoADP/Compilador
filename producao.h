@@ -5,7 +5,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-#define PRODUCOES_TAMANHO_MAX 10
+#define PRODUCOES_TAMANHO_MAX 1000
 #define REGRA_TAMANHO_MAX 50
 
 struct regra {

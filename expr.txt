@@ -1,0 +1,6 @@
+A - E
+E - T W
+W - + T W | - T W | e
+T - F X
+X - * F W | \ F W | e
+F - ( E ) | n | v

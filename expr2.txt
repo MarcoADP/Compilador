@@ -1,0 +1,6 @@
+A -> E
+E -> T W
+W -> + T W | - T W | EPSILON
+T -> F X
+X -> * F W | \ F W | EPSILON
+F -> ( E ) | n | v

@@ -259,6 +259,7 @@ void first() {
         // adiciona o elemento se for um terminal
         if (set_contains(&terminais, *elemento)) {
           mudou |= grammar_set_add(first_set, chave, *elemento);
+          elemento++;
           break;
         }
 
@@ -279,7 +280,7 @@ void first() {
         elemento++;
       } while (*elemento != '\0');
       // todos os elementos da producao sao nao terminais e derivam vazio
-      if (*elemento == '\0' || set_contains(&terminais, *elemento)) {
+      if (*elemento == '\0') {
         mudou |= grammar_set_add(first_set, chave, 'e');
       }
     }
@@ -300,7 +301,11 @@ void follow() {
 
   //RULE 1
   //ADD $ em S (final de cadeia no estado inicial)
-  grammar_set_add(follow_set, 'S', '$');
+  if (set_contains(&nao_terminais, 'S')){
+    grammar_set_add(follow_set, 'S', '$');
+  } else { // se não contem o S, pega usa o primeiro como inicial
+    grammar_set_add(follow_set, nao_terminais.elementos[0], '$');
+  }
 
   for(int i = 0; i < producoes.tamanho; i++){
     producao = &producoes.regras[i];
@@ -475,7 +480,7 @@ void constroiTabela(){
                   }
 
                   //Regra 3
-                  if(set_contains(&follow_set[k].elementos, '$')){
+                  if(set_contains(&follow_set[n].elementos, '$')){
                     linha = calcula_posicao_naoterminais(chave);
                     //coluna = calcula_posicao_terminais('$');
                     tabela_set[linha][terminais.tamanho] = i;
