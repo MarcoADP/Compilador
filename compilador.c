@@ -443,7 +443,7 @@ void constroiTabela(){
     //A -> alpha - correndo em cada elemento da producao
     for(int j = 1; j < producao->tamanho; j++){
       elemento = &producao->elementos[j];
-
+      bool contemVazio = false;
       //se elemento é NT
       if(set_contains(&nao_terminais, *elemento)){
 
@@ -463,6 +463,7 @@ void constroiTabela(){
 
             //Regra 2
             if(set_contains(&first_set[k].elementos, 'e')){
+              contemVazio = true;
 
               //percorrendo n 0-|NT| ate achar o follow da chave
               for(int n = 0; n < nao_terminais.tamanho; n++){
@@ -494,7 +495,18 @@ void constroiTabela(){
             break;
           }
         }
+        if (!contemVazio) break;
       } else {
+        /*char teste = *(elemento-1);
+        printf("TESTE: %c\n", teste);
+        for (int m = 0; m < nao_terminais.tamanho; ++m){
+          if (teste == first_set[m].chave){
+            if (set_contains(&first_set[m].elementos, 'e')){
+              break;
+            }
+          }
+        }*/
+
         linha = calcula_posicao_naoterminais(chave);
         coluna = calcula_posicao_terminais(*elemento);
         tabela_set[linha][coluna] = i;
