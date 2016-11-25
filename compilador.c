@@ -521,6 +521,7 @@ void constroiTabela(){
             }
           }
         }
+        break;
       }
     }
   }
