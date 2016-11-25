@@ -259,7 +259,6 @@ void first() {
         // adiciona o elemento se for um terminal
         if (set_contains(&terminais, *elemento)) {
           mudou |= grammar_set_add(first_set, chave, *elemento);
-          elemento++;
           break;
         }
 
@@ -280,7 +279,7 @@ void first() {
         elemento++;
       } while (*elemento != '\0');
       // todos os elementos da producao sao nao terminais e derivam vazio
-      if (*elemento == '\0') {
+      if (*elemento == '\0' || set_contains(&terminais, *elemento)) {
         mudou |= grammar_set_add(first_set, chave, 'e');
       }
     }
