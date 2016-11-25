@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
   FILE * arquivo = abre_arquivo(nome_arquivo);
   parse_arquivo(arquivo);
   fclose(arquivo);
-  
+
   first_set = malloc(nao_terminais.tamanho * sizeof(struct grammar_set));
   follow_set = malloc(nao_terminais.tamanho * sizeof(struct grammar_set));
   tabela_set = criaMatriz(nao_terminais.tamanho, terminais.tamanho+1);
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
   first();
   follow();
   constroiTabela();
-  
+
   print_all();
 
   free(first_set);
@@ -249,23 +249,24 @@ void first() {
       producao = &producoes.regras[i];
       chave = producao->elementos[0];
       elemento = &producao->elementos[1];
-      
-      // comeca com nao terminal
+
+      // comeca com terminal
       if (set_contains(&terminais, *elemento)) {
         continue;
       }
-      
+
       do {
         // adiciona o elemento se for um terminal
         if (set_contains(&terminais, *elemento)) {
           mudou |= grammar_set_add(first_set, chave, *elemento);
+          elemento++;
           break;
         }
 
         // comeca com nao terminal
         // adiciona todos os first deste nao terminal exceto vazio
         struct grammar_set *f = get_grammar_set(first_set, *elemento);
-        
+
         for (size_t i = 0; i < f->elementos.tamanho; i++) {
           if (f->elementos.elementos[i] != 'e') {
             mudou |= grammar_set_add(first_set, chave, f->elementos.elementos[i]);
@@ -279,7 +280,7 @@ void first() {
         elemento++;
       } while (*elemento != '\0');
       // todos os elementos da producao sao nao terminais e derivam vazio
-      if (elemento == '\0') {
+      if (*elemento == '\0') {
         mudou |= grammar_set_add(first_set, chave, 'e');
       }
     }
@@ -297,7 +298,7 @@ void follow() {
   char *elemento;
   char chave;
   char *anterior;
-  
+
   //RULE 1
   //ADD $ em S (final de cadeia no estado inicial)
   grammar_set_add(follow_set, 'S', '$');
@@ -306,14 +307,14 @@ void follow() {
     producao = &producoes.regras[i];
     tam = producao->tamanho-1;
     chave = producao->elementos[0];
-    
+
     //RULE 2
-    //A -> alpha B betha 
+    //A -> alpha B betha
     //O que estão em First de Betha são follow de B ou seja Follow(B) <- First(betha)
     for(int j = tam; j > 1; j--){
       elemento = &producao->elementos[j];
       anterior = &producao->elementos[j-1];
-      
+
       if(set_contains(&nao_terminais, *anterior)){
         if(set_contains(&nao_terminais, *elemento)){
           for (int k = 0; k < nao_terminais.tamanho; k++) {
@@ -321,17 +322,17 @@ void follow() {
               //printf("First de %c => ", *elemento);
               for(int l = 0; l < first_set[k].elementos.tamanho; l++){
                 if('e' != first_set[k].elementos.elementos[l]){
-                  grammar_set_add(follow_set, *anterior, first_set[k].elementos.elementos[l]);  
-                }                
+                  grammar_set_add(follow_set, *anterior, first_set[k].elementos.elementos[l]);
+                }
               }
               break;
-            } 
+            }
           }
         } else {
           grammar_set_add(follow_set, *anterior, *elemento);
         }
       }
-    } 
+    }
   }
 
   bool mudou = false;
@@ -380,7 +381,7 @@ void follow() {
         }
       }
     }
-  } 
+  }
 }
 
 bool grammar_set_add(struct grammar_set *s, char nao_terminal, char terminal) {
@@ -438,27 +439,27 @@ void constroiTabela(){
     //A -> alpha - correndo em cada elemento da producao
     for(int j = 1; j <= 1; j++){
       elemento = &producao->elementos[j];
-      
+
       //se elemento é NT
       if(set_contains(&nao_terminais, *elemento)){
-        
+
         //percorrendo k 0-|NT| ate achar o first do elemento
         for (int k = 0; k < nao_terminais.tamanho; k++) {
 
           //achou o first do elemento
           if (*elemento == first_set[k].chave) {
-            
+
             //Regra 1
             for(int l = 0; l < first_set[k].elementos.tamanho; l++){
               linha = calcula_posicao_naoterminais(chave);
-              coluna = calcula_posicao_terminais(first_set[k].elementos.elementos[l]); 
+              coluna = calcula_posicao_terminais(first_set[k].elementos.elementos[l]);
               tabela_set[linha][coluna] = i;
               //add producao em M[chave, first_set[k].elementos.elementos[l]]
             }
 
             //Regra 2
             if(set_contains(&first_set[k].elementos, 'e')){
-              
+
               //percorrendo n 0-|NT| ate achar o follow da chave
               for(int n = 0; n < nao_terminais.tamanho; n++){
 
@@ -572,7 +573,7 @@ void print_tabela() {
   for (int i = 0; i < terminais.tamanho; ++i) {
     if (terminais.elementos[i] != 'e')
       printf("%*c%*c|", maior/2, terminais.elementos[i], maior/2, ' ');
-    else 
+    else
       a = i;
   }
   printf("%*c%*c|", maior/2, '$', maior/2, ' ');
@@ -588,7 +589,7 @@ void print_tabela() {
   for (int i = 0; i < nao_terminais.tamanho; ++i) {
     printf("%*c%*c|", maior/2, nao_terminais.elementos[i], maior/2, ' ');
     for (int j = 0; j <= terminais.tamanho; ++j) {
-      if (a == j) 
+      if (a == j)
         continue;
       int ptr_producao = tabela_set[i][j]; // Ponteiro para a produção
       if (ptr_producao == -1) {
@@ -628,7 +629,7 @@ void mostra_matriz(int** matriz){
       } else {
         printf("%d\t", matriz[i][j]);
       }
-      
+
     }
   }
   printf("\n\n");
