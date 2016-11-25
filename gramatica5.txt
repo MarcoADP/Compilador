@@ -1,4 +1,4 @@
-S - abX$
+S - abX
 X    - cd | bX
 X -    H
 H 	-	w | k

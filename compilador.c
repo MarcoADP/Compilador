@@ -19,6 +19,7 @@ struct set terminais;
 struct set nao_terminais;
 struct producoes producoes;
 int **tabela_set;
+int **tabela_set_erros;
 extern char buffer_err[];
 
 char nome_arquivo[60];
@@ -62,6 +63,7 @@ int main(int argc, char *argv[]) {
   first_set = malloc(nao_terminais.tamanho * sizeof(struct grammar_set));
   follow_set = malloc(nao_terminais.tamanho * sizeof(struct grammar_set));
   tabela_set = criaMatriz(nao_terminais.tamanho, terminais.tamanho+1);
+  tabela_set_erros = criaMatriz(nao_terminais.tamanho, terminais.tamanho+1);
 
   first();
   follow();
@@ -456,6 +458,9 @@ void constroiTabela(){
             for(int l = 0; l < first_set[k].elementos.tamanho; l++){
               linha = calcula_posicao_naoterminais(chave);
               coluna = calcula_posicao_terminais(first_set[k].elementos.elementos[l]);
+              if (tabela_set[linha][coluna] != -1) {
+                tabela_set_erros[linha][coluna]++;
+              }
               tabela_set[linha][coluna] = i;
               //add producao em M[chave, first_set[k].elementos.elementos[l]]
             }
@@ -474,6 +479,9 @@ void constroiTabela(){
                   for(int b = 0; b < follow_set[n].elementos.tamanho; b++){
                     linha = calcula_posicao_naoterminais(chave);
                     coluna = calcula_posicao_terminais(follow_set[n].elementos.elementos[b]);
+                    if (tabela_set[linha][coluna] != -1) {
+                      tabela_set_erros[linha][coluna]++;
+                    }
                     tabela_set[linha][coluna] = i;
                     //add producao em M[chave, follow_set[n].elementos.elementos[l]]
 
@@ -483,6 +491,9 @@ void constroiTabela(){
                   if(set_contains(&follow_set[n].elementos, '$')){
                     linha = calcula_posicao_naoterminais(chave);
                     //coluna = calcula_posicao_terminais('$');
+                    if (tabela_set[linha][coluna] != -1) {
+                      tabela_set_erros[linha][coluna]++;
+                    }
                     tabela_set[linha][terminais.tamanho] = i;
                     //add producao em M[chave, $]
                   }
@@ -496,16 +507,6 @@ void constroiTabela(){
         }
         if (!contemVazio) break;
       } else {
-        /*char teste = *(elemento-1);
-        printf("TESTE: %c\n", teste);
-        for (int m = 0; m < nao_terminais.tamanho; ++m){
-          if (teste == first_set[m].chave){
-            if (set_contains(&first_set[m].elementos, 'e')){
-              break;
-            }
-          }
-        }*/
-
         linha = calcula_posicao_naoterminais(chave);
         coluna = calcula_posicao_terminais(*elemento);
         tabela_set[linha][coluna] = i;
@@ -518,6 +519,9 @@ void constroiTabela(){
                 linha = calcula_posicao_naoterminais(chave);
                 coluna = calcula_posicao_terminais(follow_set[n].elementos.elementos[b]);
                 if(follow_set[n].elementos.elementos[b] != '$'){
+                  if (tabela_set[linha][coluna] != -1) {
+                    tabela_set_erros[linha][coluna]++;
+                  }
                   tabela_set[linha][coluna] = i;
                 }
                 //add producao em M[chave, follow_set[n].elementos.elementos[l]]
@@ -526,6 +530,9 @@ void constroiTabela(){
               if(set_contains(&follow_set[n].elementos, '$')){
                 linha = calcula_posicao_naoterminais(chave);
                 coluna = terminais.tamanho;
+                if (tabela_set[linha][coluna] != -1) {
+                  tabela_set_erros[linha][coluna]++;
+                }
                 tabela_set[linha][coluna] = i;
               }
               break;
@@ -535,6 +542,14 @@ void constroiTabela(){
         break;
       }
     }
+  }
+  for (int i = 0; i < nao_terminais.tamanho; ++i)
+  {
+    for (int j = 0; j < terminais.tamanho+1; ++j)
+    {
+      printf("%d ", tabela_set[i][j]);
+    }
+    printf("\n");
   }
 }
 
@@ -554,7 +569,7 @@ int **criaMatriz(int l, int c){
 
 int calcula_posicao_terminais(char c){
   for(int i = 0; i < terminais.tamanho; i++){
-    if(c != 'e' && c == terminais.elementos[i]){
+    if(c == terminais.elementos[i]){
       return i;
     }
   }
@@ -602,6 +617,7 @@ void print_tabela() {
   }
   printf("\n");
 
+  bool isLL1 = true;
   for (int i = 0; i < nao_terminais.tamanho; ++i) {
     printf("%*c%*c|", maior/2, nao_terminais.elementos[i], maior/2, ' ');
     for (int j = 0; j <= terminais.tamanho; ++j) {
@@ -614,10 +630,20 @@ void print_tabela() {
       }
       struct regra *producao = &producoes.regras[ptr_producao];
       char *producao_formatado = formata_producao(producao->elementos);
-      printf(" %-*s|", maior-1, producao_formatado);
+
+      if (tabela_set_erros[i][j] != -1) {
+        printf(" %-*s*|", maior-2, producao_formatado);
+        isLL1 = false;
+      } else {
+        printf(" %-*s|", maior-1, producao_formatado);
+      }
       free(producao_formatado);
     }
     printf("\n");
+  }
+  if (!isLL1) {
+    printf("\nCampos na tabela com a marcacao '*' possuem mais de uma entrada.\n");
+    printf("Portanto, essa gramatica nao é LL(1).\n");
   }
 }
 
