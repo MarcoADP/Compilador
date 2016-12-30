@@ -4,9 +4,9 @@
 #include <unistd.h>
 #include <ctype.h>
 #include <stdbool.h>
-#include "set.h"
-#include "producao.h"
-#include "err.h"
+#include "includes/set.h"
+#include "includes/producao.h"
+#include "includes/err.h"
 
 
 struct set terminais;
@@ -48,46 +48,39 @@ int main(int argc, char *argv[]) {
   parse_arquivo(arquivo);
   fclose(arquivo);
 
-  print_all();
 
   //printf("Recursao Direta => %d\n", temRecursaoDireta());
 
   eliminarRecursao();
   //printf("%c\n", proximoNT());
 
+  print_all();
+
   return 0;
 }
 
-bool temRecursaoDireta(char NT){
-  int i;
-  
-
+bool temRecursaoDireta(char NT) {
   struct regra *producao;
 
-  for(i = 0; i < producoes.tamanho; i++){
+  for(int i = 0; i < producoes.tamanho; i++) {
     producao = &producoes.regras[i];
-    //regra_print(producao);
-    if(producao->elementos[0] == producao->elementos[1] && producao->elementos[0] == NT){
+    if(producao->elementos[0] == producao->elementos[1] && producao->elementos[0] == NT) {
       return true;
     }
   }
-
-
   return false;
 }
 
-void eliminarRecursao(){
+void eliminarRecursao() {
   int n = nao_terminais.tamanho;
-  int i, j, p;
-  //printf("%d\n", n);
   struct regra *producao;
+
   producoes_init(&producoes_novas);
 
-  
-  for(i = 0; i < n; i++){
-    for(j = 0; j < i; j++){
-      for(p = 0; p < producoes.tamanho; p++){
-        producao = &producoes.regras[p];
+  for(int i = 0; i < n; i++){
+    for(int j = 0; j < i; j++){
+      for(int k = 0; k < producoes.tamanho; k++){
+        producao = &producoes.regras[k];
 
         //SE Alguma producao P for A(i) -> A(j)...
         if((producao->elementos[0] == nao_terminais.elementos[i]) && (producao->elementos[1] == nao_terminais.elementos[j])){
@@ -100,25 +93,18 @@ void eliminarRecursao(){
       } 
     }
     eliminarRecursaoImediata(i);
-    
   }
-
-  //printf("\n\n\n\n");
-  producoes_print(&producoes_novas);
-
-
 }
 
-void eliminarRecursaoImediata(int num){
+void eliminarRecursaoImediata(int num) {
   char NT = nao_terminais.elementos[num];
   struct regra *producao;
-  int p;
   char ch;
 
   //Se nao tiver recursao direta, apenas copiar as CH->... para nova gramatica
   if(!temRecursaoDireta(NT)){
-    for(p = 0; p < producoes.tamanho; p++){
-      producao = &producoes.regras[p];
+    for(int i = 0; i < producoes.tamanho; i++) {
+      producao = &producoes.regras[i];
       if(producao->elementos[0] == NT){
         producoes_add(&producoes_novas, producao);
       }
@@ -130,14 +116,14 @@ void eliminarRecursaoImediata(int num){
     set_add(&nao_terminais, ch);
 
     //ADD A -> betha A'
-    for(p = 0; p < producoes.tamanho; p++){
-      producao = &producoes.regras[p];
-      if(producao->elementos[0] == NT ){
-        if(producao->elementos[1] != NT){
+    for(int i = 0; i < producoes.tamanho; i++) {
+      producao = &producoes.regras[i];
+      if(producao->elementos[0] == NT ) {
+        if(producao->elementos[1] != NT) {
           //ADD A -> bethaA'
           struct regra producao_nova;
           //if(regra_contains(producao, 'e')){
-          if(producao->elementos[1] == 'e'){
+          if(producao->elementos[1] == 'e') {
             regra_init(&producao_nova);
             regra_add(&producao_nova, producao->elementos[0]);
           } else {
@@ -150,8 +136,8 @@ void eliminarRecursaoImediata(int num){
     }
 
     //ADD A' -> alphaA'  
-    for(p = 0; p < producoes.tamanho; p++){
-      producao = &producoes.regras[p];
+    for(int i = 0; i < producoes.tamanho; i++) {
+      producao = &producoes.regras[i];
       if(producao->elementos[0] == NT ){
         if(producao->elementos[1] == NT) {
           //Criando A' -> (...)A'
@@ -166,23 +152,13 @@ void eliminarRecursaoImediata(int num){
         }
       }
     }
-
   }
-
-
 }
 
-char proximoNT(){
-  int num, i;
-  for(num = 65; num < 91; num++){
-    char ch = convertIntToChar(num);
-    for(i = 0; i < nao_terminais.tamanho; i++){
-      if(ch == nao_terminais.elementos[i]){
-        break;
-      }
-      if(i == (nao_terminais.tamanho-1)){
-        return ch;
-      }      
+char proximoNT() {
+  for(char ch = 'A'; ch <= 'Z'; ch++) {
+    if (!set_contains(&nao_terminais, ch)) {
+      return ch;
     }
   }
   return 'Z';
@@ -198,7 +174,11 @@ void print_all() {
   printf("\n");
 
   printf("Regras de Produção:\n");
-  producoes_print(&producoes);
+  producoes_print_formatado(&producoes);
+  printf("\n");
+
+  printf("Sem Recursao a Esquerda:\n");
+  producoes_print_formatado(&producoes_novas);
   printf("\n");
 }
 

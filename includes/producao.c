@@ -31,6 +31,14 @@ void producoes_print(struct producoes *producoes) {
   printf("}\n");
 }
 
+void producoes_print_formatado(struct producoes *producoes) {
+  for (int i = 0; i < producoes->tamanho; i++) {
+    char *formatado = formata_producao(producoes->regras[i].elementos);
+    printf("%s\n", formatado);
+    free(formatado);
+  }
+}
+
 void regra_init(struct regra *r) {
   r->tamanho = 0;
 }

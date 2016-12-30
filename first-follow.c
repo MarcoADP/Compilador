@@ -4,9 +4,9 @@
 #include <unistd.h>
 #include <ctype.h>
 #include <stdbool.h>
-#include "set.h"
-#include "producao.h"
-#include "err.h"
+#include "includes/set.h"
+#include "includes/producao.h"
+#include "includes/err.h"
 
 struct grammar_set {
   char chave;

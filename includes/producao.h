@@ -22,6 +22,7 @@ void producoes_init(struct producoes *producoes);
 bool producoes_add(struct producoes *producoes, struct regra *producao);
 bool producoes_full(struct producoes *producoes);
 void producoes_print(struct producoes *producoes);
+void producoes_print_formatado(struct producoes *producoes);
 void regra_init(struct regra *regra);
 bool regra_add(struct regra *regra, char elem);
 bool regra_full(struct regra *regra);
