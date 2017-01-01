@@ -13,7 +13,7 @@ struct set terminais;
 struct set nao_terminais;
 struct producoes producoes;
 struct producoes producoes_novas;
-int **tabela_set;
+struct producoes producoes_copia;
 extern char buffer_err[];
 
 char nome_arquivo[60];
@@ -33,6 +33,7 @@ char convertIntToChar(int num);
 void mostra_matriz(int** matriz);
 bool temRecursaoDireta(char NT);
 void eliminarRecursao();
+void substituirRecursaoIndireta(char Ai, char Aj, struct regra *producao);
 void eliminarRecursaoImediata(int num);
 char proximoNT();
 
@@ -48,11 +49,7 @@ int main(int argc, char *argv[]) {
   parse_arquivo(arquivo);
   fclose(arquivo);
 
-
-  //printf("Recursao Direta => %d\n", temRecursaoDireta());
-
   eliminarRecursao();
-  //printf("%c\n", proximoNT());
 
   print_all();
 
@@ -62,8 +59,8 @@ int main(int argc, char *argv[]) {
 bool temRecursaoDireta(char NT) {
   struct regra *producao;
 
-  for(int i = 0; i < producoes.tamanho; i++) {
-    producao = &producoes.regras[i];
+  for(int i = 0; i < producoes_copia.tamanho; i++) {
+    producao = &producoes_copia.regras[i];
     if(producao->elementos[0] == producao->elementos[1] && producao->elementos[0] == NT) {
       return true;
     }
@@ -77,22 +74,50 @@ void eliminarRecursao() {
 
   producoes_init(&producoes_novas);
 
-  for(int i = 0; i < n; i++){
-    for(int j = 0; j < i; j++){
-      for(int k = 0; k < producoes.tamanho; k++){
-        producao = &producoes.regras[k];
+  producoes_init(&producoes_copia);
+  producoes_copy(&producoes, &producoes_copia);
+
+  for(int i = 0; i < n; i++) {
+    for(int j = 0; j < i; j++) {
+      for(int k = producoes_copia.tamanho - 1; k >= 0; k--) {
+        producao = &producoes_copia.regras[k];
 
         //SE Alguma producao P for A(i) -> A(j)...
-        if((producao->elementos[0] == nao_terminais.elementos[i]) && (producao->elementos[1] == nao_terminais.elementos[j])){
-          
+        if((producao->elementos[0] == nao_terminais.elementos[i]) && (producao->elementos[1] == nao_terminais.elementos[j])) {
           //Substituir A(j) por betha, onde A(j) -> betha, para todas as producoes que corresponda 
-
-          printf("%c -- %c\n", nao_terminais.elementos[i], nao_terminais.elementos[j]);
-          printf("achou!!\n\n");
+          substituirRecursaoIndireta(nao_terminais.elementos[i], nao_terminais.elementos[j], producao);
         }
       } 
     }
     eliminarRecursaoImediata(i);
+  }
+}
+
+void substituirRecursaoIndireta(char Ai, char Aj, struct regra *p) {
+  char cadeiaY[50];
+  strcpy(cadeiaY, &p->elementos[2]);
+
+  // Remover Ai -> Aj cadeiaY
+  producoes_remove(&producoes_copia, p);
+
+  for (int i = 0; i < nao_terminais.tamanho; ++i) {
+    struct regra *producao = &producoes.regras[i];
+    // Aj -> delta1 | delta2 | .. | deltak
+    if (producao->elementos[0] == Aj) {
+      //Criar nova regra Ai -> delta(i)cadeiaY
+      struct regra producao_nova;
+      regra_init(&producao_nova);
+      regra_add(&producao_nova, Ai);
+
+      for (int j = 1; j < producao->tamanho; ++j) {
+        regra_add(&producao_nova, producao->elementos[j]);
+      }
+      for (char *ch = cadeiaY; *ch != '\0'; ch++) {
+        regra_add(&producao_nova, *ch);
+      }
+
+      producoes_add(&producoes_copia, &producao_nova);
+    }
   }
 }
 
@@ -102,10 +127,10 @@ void eliminarRecursaoImediata(int num) {
   char ch;
 
   //Se nao tiver recursao direta, apenas copiar as CH->... para nova gramatica
-  if(!temRecursaoDireta(NT)){
-    for(int i = 0; i < producoes.tamanho; i++) {
-      producao = &producoes.regras[i];
-      if(producao->elementos[0] == NT){
+  if(!temRecursaoDireta(NT)) {
+    for(int i = 0; i < producoes_copia.tamanho; i++) {
+      producao = &producoes_copia.regras[i];
+      if(producao->elementos[0] == NT) {
         producoes_add(&producoes_novas, producao);
       }
     }
@@ -116,13 +141,13 @@ void eliminarRecursaoImediata(int num) {
     set_add(&nao_terminais, ch);
 
     //ADD A -> betha A'
-    for(int i = 0; i < producoes.tamanho; i++) {
-      producao = &producoes.regras[i];
+    for(int i = 0; i < producoes_copia.tamanho; i++) {
+      producao = &producoes_copia.regras[i];
       if(producao->elementos[0] == NT ) {
         if(producao->elementos[1] != NT) {
           //ADD A -> bethaA'
           struct regra producao_nova;
-          //if(regra_contains(producao, 'e')){
+
           if(producao->elementos[1] == 'e') {
             regra_init(&producao_nova);
             regra_add(&producao_nova, producao->elementos[0]);
@@ -136,15 +161,15 @@ void eliminarRecursaoImediata(int num) {
     }
 
     //ADD A' -> alphaA'  
-    for(int i = 0; i < producoes.tamanho; i++) {
-      producao = &producoes.regras[i];
-      if(producao->elementos[0] == NT ){
+    for(int i = 0; i < producoes_copia.tamanho; i++) {
+      producao = &producoes_copia.regras[i];
+      if(producao->elementos[0] == NT ) {
         if(producao->elementos[1] == NT) {
           //Criando A' -> (...)A'
           struct regra producao_nova;
           regra_init(&producao_nova);
           regra_add(&producao_nova, ch);
-          for(int i = 2; i < producao->tamanho; i++){
+          for(int i = 2; i < producao->tamanho; i++) {
             regra_add(&producao_nova, producao->elementos[i]);
           }
           regra_add(&producao_nova, ch);
@@ -152,6 +177,11 @@ void eliminarRecursaoImediata(int num) {
         }
       }
     }
+    struct regra producao_nova;
+    regra_init(&producao_nova);
+    regra_add(&producao_nova, ch);
+    regra_add(&producao_nova, 'e');
+    producoes_add(&producoes_novas, &producao_nova);
   }
 }
 
@@ -165,19 +195,11 @@ char proximoNT() {
 }
 
 void print_all() {
-  printf("\nTerminais:\n");
-  set_print(&terminais);
-  printf("\n");
-
-  printf("Não terminais:\n");
-  set_print(&nao_terminais);
-  printf("\n");
-
-  printf("Regras de Produção:\n");
+  printf("Gramatica original:\n");
   producoes_print_formatado(&producoes);
   printf("\n");
 
-  printf("Sem Recursao a Esquerda:\n");
+  printf("Gramatica sem Recursao a Esquerda:\n");
   producoes_print_formatado(&producoes_novas);
   printf("\n");
 }

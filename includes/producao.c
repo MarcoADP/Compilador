@@ -39,6 +39,27 @@ void producoes_print_formatado(struct producoes *producoes) {
   }
 }
 
+void producoes_copy(struct producoes *origem, struct producoes *destino) {
+  for (int i = 0; i < origem->tamanho; ++i) {
+    producoes_add(destino, &origem->regras[i]);
+  }
+}
+
+bool producoes_remove(struct producoes *producoes, struct regra *producao) {
+  bool equal = false;
+  for (int i = 0; i < producoes->tamanho; ++i) {
+    if (regra_equal(&producoes->regras[i], producao) || equal) {
+      equal = true;
+      if (i == (producoes->tamanho - 1)) break;
+      producoes->regras[i] = producoes->regras[i+1];
+    }
+  }
+  if (equal) {
+    producoes->tamanho--;
+  }
+  return equal;
+}
+
 void regra_init(struct regra *r) {
   r->tamanho = 0;
 }
@@ -68,6 +89,19 @@ bool regra_contains(struct regra *r, char elem) {
 void regra_print(struct regra *r) {
   r->elementos[r->tamanho] = '\0';
   printf("REGRA: {tamanho: %d, \"%s\"}\n", r->tamanho, r->elementos);
+}
+
+bool regra_equal(struct regra *r1, struct regra *r2) {
+  if (r1->tamanho != r2->tamanho) {
+    return false;
+  }
+
+  for (int i = 0; i < r1->tamanho; ++i) {
+    if (r1->elementos[i] != r2->elementos[i]) {
+      return false;
+    }
+  }
+  return true;
 }
 
 char *formata_producao(char *producao) {
