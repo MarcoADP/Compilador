@@ -113,7 +113,7 @@ void substituirRecursaoIndireta(char Ai, char Aj, struct regra *p) {
         regra_add(&producao_nova, *ch);
       }
 
-      producoes_add(&producoes_novas, &producao_nova);
+      producoes_add2(&producoes_novas, &producao_nova, Ai);
     }
   }
 }
@@ -130,7 +130,6 @@ void eliminarRecursaoImediata(int num) {
     struct producoes producoesNT;
     producoes_init(&producoesNT);
     producoes_get(NT, &producoes_novas, &producoesNT);
-
 
     //ADD A -> betha A'
     for(int i = 0; i < producoesNT.tamanho; i++) {
@@ -149,6 +148,7 @@ void eliminarRecursaoImediata(int num) {
         producoes_add2(&producoes_novas, &producao_nova, NT);
       }
     }
+
     bool primeiro = true;
     //ADD A' -> alphaA'  
     for(int i = 0; i < producoesNT.tamanho; i++) {
@@ -166,6 +166,7 @@ void eliminarRecursaoImediata(int num) {
           producoes_add2(&producoes_novas, &producao_nova, NT);
         else 
           producoes_add2(&producoes_novas, &producao_nova, ch);
+        primeiro = false;
       }
     }
     struct regra producao_nova;
