@@ -13,9 +13,30 @@ bool producoes_add(struct producoes *producoes, struct regra *producao) {
     perror("Produções cheio!\n");
     return false;
   }
+
   producao->elementos[producao->tamanho] = '\0';
   strcpy(producoes->regras[producoes->tamanho].elementos, producao->elementos);
   producoes->regras[producoes->tamanho++].tamanho = producao->tamanho;
+  return true;
+}
+
+bool producoes_add2(struct producoes *producoes, struct regra *producao, char NT) {
+  if (producoes_full(producoes)) {
+    perror("Produções cheio!\n");
+    return false;
+  }
+
+  producao->elementos[producao->tamanho] = '\0';
+
+  int i = producoes->tamanho - 1;
+  while (producoes->regras[i].elementos[0] != NT) {
+    producoes->regras[i+1] = producoes->regras[i];
+    i--;
+  }
+
+  strcpy(producoes->regras[i+1].elementos, producao->elementos);
+  producoes->regras[i+1].tamanho = producao->tamanho;
+  producoes->tamanho++;
   return true;
 }
 
@@ -58,6 +79,14 @@ bool producoes_remove(struct producoes *producoes, struct regra *producao) {
     producoes->tamanho--;
   }
   return equal;
+}
+
+void producoes_get(char NT, struct producoes *origem, struct producoes *destino) {
+  for (int i = 0; i < origem->tamanho; ++i) {
+    if (origem->regras[i].elementos[0] == NT) {
+      producoes_add(destino, &origem->regras[i]);
+    }
+  }
 }
 
 void regra_init(struct regra *r) {
